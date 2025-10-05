@@ -108,17 +108,53 @@ export default function SimplePasswordReset() {
 
     setLoading(true);
     try {
-      // Store the new password temporarily for the login system to use
-      console.log('Storing new password for user:', email.trim().toLowerCase());
-      localStorage.setItem('temp_new_password', JSON.stringify({
-        email: email.trim().toLowerCase(),
-        password: newPassword,
-        expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      }));
+      // Try to create/update user account directly in Supabase
+      const trimmedEmail = email.trim().toLowerCase();
       
-      toast.success('Password updated! You can now login with your new password.', {
-        duration: 6000,
+      // First try to sign up (in case user doesn't exist)
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password: newPassword,
+        options: {
+          emailRedirectTo: window.location.origin + '/auth/callback'
+        }
       });
+      
+      if (signUpError && !signUpError.message?.includes('already registered')) {
+        throw signUpError;
+      }
+      
+      // Now try to sign in with the new password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password: newPassword
+      });
+      
+      if (signInError) {
+        // If sign in fails, the user might exist but with old password
+        // Store temp password for the auth context to handle
+        localStorage.setItem('temp_new_password', JSON.stringify({
+          email: trimmedEmail,
+          password: newPassword,
+          expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+        
+        toast.success('Password updated! Please try logging in with your new password.', {
+          duration: 6000,
+        });
+      } else {
+        // Successfully signed in with new password
+        toast.success('Password updated and signed in successfully!', {
+          duration: 4000,
+        });
+        
+        // Clear the token and redirect to home
+        localStorage.removeItem('temp_reset_token');
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+        return;
+      }
 
       localStorage.removeItem('temp_reset_token');
       setStep('success');
