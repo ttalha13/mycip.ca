@@ -81,6 +81,16 @@ export default function ResetPasswordPage() {
     try {
       console.log('🔄 Updating password...');
       
+      // Get current session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('❌ No valid session for password update:', sessionError);
+        throw new Error('Invalid or expired reset link. Please request a new password reset.');
+      }
+      
+      console.log('✅ Valid session found, updating password...');
+      
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -103,7 +113,11 @@ export default function ResetPasswordPage() {
 
     } catch (error: any) {
       console.error('💥 Error updating password:', error);
-      setError(error.message || 'Failed to update password. Please try again.');
+      if (error.message?.includes('Invalid or expired')) {
+        setError('This reset link has expired. Please request a new password reset from the login page.');
+      } else {
+        setError(error.message || 'Failed to update password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
