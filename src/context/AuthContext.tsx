@@ -162,14 +162,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Clear the temp password
           localStorage.removeItem('temp_new_password');
           
-          // Try to sign in with the original password first, then update
-          // For demo purposes, we'll simulate a successful sign in
+          // For demo purposes, we'll simulate a successful sign in with the new password
+          // In a real app, you'd need to handle this server-side
           if (import.meta.env.DEV) {
             console.log('Using temporary new password for sign in');
           }
           
-          // Create a mock session for demo purposes
-          // In production, you'd handle this server-side
+          // Simulate successful authentication
+          // Note: This is a demo implementation - in production you'd handle password updates server-side
           return { 
             error: null,
             message: 'Successfully signed in with new password!' 
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error) {
         if (import.meta.env.DEV) {
-          console.error('Supabase sign in error:', error);
+          console.error('Supabase sign in error (raw):', error, 'UI displays generic message for security.');
         }
         // For any authentication error, show generic message for security
         return {
@@ -206,7 +206,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     } catch (error: any) {
       if (import.meta.env.DEV) {
-        console.error('Password sign in error:', error);
+        console.error('Password sign in error (raw):', error, 'UI displays generic message for security.');
       }
       return {
         error: new Error('Invalid email or password'),
