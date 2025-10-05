@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
 import SimplePasswordReset from './pages/SimplePasswordReset';
+import NewPasswordReset from './pages/NewPasswordReset';
 
 function App() {
   return (
