@@ -464,12 +464,6 @@ export default function LoginPage() {
               >
                 Forgot Password?
               </button>
-              <button
-                onClick={() => navigate('/simple-password-reset')}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
-              >
-                Quick Reset (Demo)
-              </button>
             </div>
           )}
 
