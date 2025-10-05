@@ -21,6 +21,7 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/new-password-reset" element={<NewPasswordReset />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}

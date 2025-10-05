@@ -272,7 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const redirectUrl = `${baseUrl}/reset-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-        redirectTo: redirectUrl,
+        redirectTo: `${baseUrl}/new-password-reset`,
       });
 
       if (error) {
