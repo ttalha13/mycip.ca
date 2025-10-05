@@ -1,1 +1,9 @@
+# Specific routes first (most specific to least specific)
+/province/* /index.html 200
+/contact /index.html 200
+/login /index.html 200
+/auth/* /index.html 200
+/reset-password /index.html 200
+
+# Catch-all for SPA (must be last)
 /* /index.html 200

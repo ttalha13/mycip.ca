@@ -20,6 +20,8 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
+  conditions = {Role = ["admin"], Country = ["US"]}
 
 [build.environment]
   NODE_VERSION = "18"
@@ -47,6 +49,25 @@
   to = "https://mycip.ca/:splat"
   status = 301
   force = true
+
+# Specific page redirects should come before catch-all
+[[redirects]]
+  from = "/province/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/contact"
+  to = "/index.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+  force = false
 
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
