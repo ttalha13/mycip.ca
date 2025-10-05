@@ -104,15 +104,6 @@ export default function SimplePasswordReset() {
 
     setLoading(true);
     try {
-      // First sign in the user temporarily to update password
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: storedEmail,
-        password: 'temp_password_for_reset' // This will fail, but that's ok
-      });
-
-      // Since we can't sign in without the real password, we'll use admin approach
-      // In a real app, you'd have a server-side function to handle this
-      
       // For demo purposes, we'll simulate success
       localStorage.removeItem('temp_reset_token');
       setStep('success');
