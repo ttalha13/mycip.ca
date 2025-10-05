@@ -207,6 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 };
               }
             }
+          }
           // Clean up expired temp password
           if (Date.now() >= expiry) {
             localStorage.removeItem('temp_new_password');
