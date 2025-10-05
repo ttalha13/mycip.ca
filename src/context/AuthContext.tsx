@@ -312,7 +312,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Use correct redirect URL for reset password page
       const redirectUrl = import.meta.env.DEV 
-        ? 'http://localhost:3000/reset-password' 
+        ? 'https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--3000--96435430.local-credentialless.webcontainer-api.io/reset-password' 
         : 'https://mycip.ca/reset-password';
       
       console.log('🔗 Using redirect URL:', redirectUrl);
