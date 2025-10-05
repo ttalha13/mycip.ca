@@ -149,18 +149,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     }
 
-    // Check for temporary password from Quick Reset
-    const tempPasswordData = localStorage.getItem('temp_new_password');
-    if (tempPasswordData) {
-      try {
-        const { email: tempEmail, password: tempPassword, expiry } = JSON.parse(tempPasswordData);
-        
-        if (Date.now() < expiry && trimmedEmail === tempEmail && password === tempPassword) {
-          console.log('Using temporary password from Quick Reset');
+    try {
+      // Check for temporary password from Quick Reset
+      const tempPasswordData = localStorage.getItem('temp_new_password');
+      if (tempPasswordData) {
+        try {
+          const { email: tempEmail, password: tempPassword, expiry } = JSON.parse(tempPasswordData);
           
-          // Try to create or sign in the user with the new password
-          try {
-            console.log('Attempting to sign up user with new password...');
+          if (Date.now() < expiry && trimmedEmail === tempEmail && password === tempPassword) {
+            console.log('Using temporary password from Quick Reset');
+            
+            // First try to sign in normally
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              email: trimmedEmail,
+              password: tempPassword
+            });
+            
+            if (!signInError) {
+              // Success! Clean up temp password
+              localStorage.removeItem('temp_new_password');
+              return { 
+                error: null,
+                message: 'Successfully signed in with new password!' 
+              };
+            }
+            
+            // If sign in fails, try to create new user
             const { error: signUpError } = await supabase.auth.signUp({
               email: trimmedEmail,
               password: tempPassword,
@@ -169,39 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               }
             });
             
-            if (signUpError && signUpError.message?.includes('already registered')) {
-              console.log('User already exists, trying to update password...');
-              
-              // User exists, we need to update their password
-              // First try to get a session by signing them in with any method
-              const { error: updateError } = await supabase.auth.updateUser({ 
-                password: tempPassword 
-              });
-              
-              if (updateError) {
-                console.log('Direct password update failed, storing for manual update');
-                // Keep the temp password for manual handling
-                return { 
-                  error: null,
-                  message: 'Password will be updated on next successful login' 
-                };
-              } else {
-                console.log('Password updated successfully in Supabase');
-                localStorage.removeItem('temp_new_password');
-                return { 
-                  error: null,
-                  message: 'Password updated and signed in successfully!' 
-                };
-              }
-            } else if (!signUpError) {
-              // New user created successfully
-              console.log('New user created with password');
-              localStorage.removeItem('temp_new_password');
-              return { 
-                error: null,
-                message: 'Account created with new password!' 
-              };
-            } else if (!signUpError) {
+            if (!signUpError) {
               // New user created successfully
               localStorage.removeItem('temp_new_password');
               return { 
@@ -209,20 +191,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 message: 'Account created with new password!' 
               };
             }
-          } catch (error) {
-            console.log('Temp password approach failed, trying normal auth');
+            
+            // If both fail, continue with normal auth flow
+            console.log('Temp password auth failed, trying normal flow');
+          } else if (Date.now() >= expiry) {
+            // Clean up expired temp password
+            localStorage.removeItem('temp_new_password');
           }
-        } else if (Date.now() >= expiry) {
-          // Clean up expired temp password
+        } catch (error) {
+          console.error('Error processing temp password:', error);
           localStorage.removeItem('temp_new_password');
         }
-      } catch (error) {
-        console.error('Error processing temp password:', error);
-        localStorage.removeItem('temp_new_password');
       }
-    }
-
-    try {
+      
+      // Normal authentication flow
       const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: password
