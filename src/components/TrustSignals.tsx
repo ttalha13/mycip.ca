@@ -10,8 +10,8 @@ export default function TrustSignals() {
     {
       icon: Award,
       title: 'Expert Guidance',
-      description: 'Created by experienced immigration professionals with proven success stories'
-    },
+      value: '13',
+      label: 'Jurisdictions Covered',
     {
       icon: Users,
       title: 'Community Driven',
