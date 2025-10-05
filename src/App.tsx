@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import SimplePasswordReset from './pages/SimplePasswordReset';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/simple-password-reset" element={<SimplePasswordReset />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}
