@@ -466,6 +466,13 @@ export default function LoginPage() {
                 >
                   Alternative: Reset with current password
                 </button>
+                <br />
+                <button
+                  onClick={() => navigate('/simple-password-reset')}
+                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline"
+                >
+                  Quick Reset: No email required
+                </button>
               </div>
             </div>
           )}
