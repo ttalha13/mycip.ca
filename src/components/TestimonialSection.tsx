@@ -167,11 +167,11 @@ export default function TestimonialSection() {
   // Fetch testimonials on component mount
   useEffect(() => {
     fetchTestimonials();
-  }, []);
+  }, [fetchTestimonials]);
 
   // Auto-rotate testimonials
   useEffect(() => {
-    if (loading || testimonials.length === 0) return;
+    if (loading || testimonials.length <= 1) return;
     
     const interval = setInterval(() => {
       nextTestimonial();
@@ -210,31 +210,6 @@ export default function TestimonialSection() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
-              Success Stories That Inspire
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Real journeys, real results. Discover how thousands achieved their Canadian dream through MyCIP
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <Loader2 className="animate-spin h-12 w-12 mx-auto text-purple-500 mb-4" />
-              <p className="text-gray-600 dark:text-gray-300">Loading success stories...</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,6 +247,14 @@ export default function TestimonialSection() {
 
         {/* Main Testimonial Carousel */}
         <div className="relative">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader2 className="animate-spin h-12 w-12 mx-auto text-purple-500 mb-4" />
+                <p className="text-gray-600 dark:text-gray-300">Loading success stories...</p>
+              </div>
+            </div>
+          ) : (
           <div 
             ref={containerRef}
             className="min-h-[500px] flex items-center justify-center"
@@ -336,9 +319,11 @@ export default function TestimonialSection() {
               </div>
             )}
           </div>
+          )}
 
           {/* Navigation Controls */}
-          <div className="flex items-center justify-center mt-12 space-x-6">
+          {!loading && (
+            <div className="flex items-center justify-center mt-12 space-x-6">
             <button
               onClick={prevTestimonial}
               disabled={testimonials.length <= 1}
@@ -372,6 +357,7 @@ export default function TestimonialSection() {
               <ChevronRight className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
             </button>
           </div>
+          )}
         </div>
 
         {/* Call to Action */}
