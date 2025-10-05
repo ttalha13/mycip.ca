@@ -48,16 +48,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isInitializing = true;
       initializationPromise = (async () => {
         try {
+          // Clear any potentially corrupted session data first
+          const storedSession = localStorage.getItem('mycip.auth.token');
+          if (storedSession) {
+            try {
+              const sessionData = JSON.parse(storedSession);
+              // Check if session is expired or malformed
+              if (!sessionData.access_token || !sessionData.refresh_token) {
+                console.log('Clearing malformed session data');
+                localStorage.removeItem('mycip.auth.token');
+                await supabase.auth.signOut();
+              }
+            } catch (parseError) {
+              console.log('Clearing corrupted session data');
+              localStorage.removeItem('mycip.auth.token');
+              await supabase.auth.signOut();
+            }
+          }
+
           const { data: { session }, error } = await supabase.auth.getSession();
           if (error) {
             console.error('Error getting session:', error);
             
             // Handle refresh token errors by clearing stale session data
             if (error.message?.includes('Invalid Refresh Token') || 
-                error.message?.includes('Refresh Token Not Found')) {
+                error.message?.includes('Refresh Token Not Found') ||
+                error.message?.includes('refresh_token_not_found')) {
               console.log('Clearing stale session due to invalid refresh token');
               await supabase.auth.signOut();
               localStorage.removeItem('mycip.auth.token');
+              localStorage.removeItem('supabase.auth.token');
+              // Clear all supabase-related storage
+              Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('auth')) {
+                  localStorage.removeItem(key);
+                }
+              });
               setUser(null);
               return;
             }
@@ -70,6 +96,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           try {
             await supabase.auth.signOut();
             localStorage.removeItem('mycip.auth.token');
+            localStorage.removeItem('supabase.auth.token');
+            // Clear all supabase-related storage
+            Object.keys(localStorage).forEach(key => {
+              if (key.includes('supabase') || key.includes('auth')) {
+                localStorage.removeItem(key);
+              }
+            });
           } catch (signOutError) {
             console.error('Error signing out during cleanup:', signOutError);
           }
@@ -94,6 +127,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
+        
+        // Handle token refresh errors
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.log('Token refresh failed, clearing session');
+          localStorage.removeItem('mycip.auth.token');
+          localStorage.removeItem('supabase.auth.token');
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase') || key.includes('auth')) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+        
         setUser(session?.user ?? null);
         setLoading(false);
 

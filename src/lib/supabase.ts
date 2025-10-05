@@ -34,7 +34,15 @@ try {
         flowType: 'pkce',
         debug: import.meta.env.DEV,
         storage: window.localStorage,
-        storageKey: 'mycip.auth.token'
+        storageKey: 'mycip.auth.token',
+        // Handle refresh token errors gracefully
+        onAuthStateChange: (event, session) => {
+          if (event === 'TOKEN_REFRESHED' && !session) {
+            // Clear corrupted session data
+            window.localStorage.removeItem('mycip.auth.token');
+            window.localStorage.removeItem('supabase.auth.token');
+          }
+        }
       },
       global: {
         headers: {
