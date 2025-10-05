@@ -214,7 +214,7 @@ export default function TestimonialSection() {
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [currentIndex, isAnimating, loading, testimonials.length]);
+  }, [currentIndex, isAnimating, loading, testimonials.length, nextTestimonial]);
 
   const nextTestimonial = () => {
     if (isAnimating || testimonials.length <= 1) return;
@@ -339,6 +339,13 @@ export default function TestimonialSection() {
     setSubmittingReview(true);
 
     try {
+      console.log('Submitting review:', {
+        user_name: user.email?.split('@')[0] || 'Anonymous User',
+        rating: reviewForm.rating,
+        comment: reviewForm.comment.trim(),
+        immigration_status: reviewForm.immigration_status
+      });
+
       const { error } = await supabase
         .from('testimonials')
         .insert([
@@ -351,8 +358,11 @@ export default function TestimonialSection() {
         ]);
 
       if (error) {
+        console.error('Supabase insert error:', error);
         throw error;
       }
+
+      console.log('Review submitted successfully');
 
       toast.success('Thank you for sharing your story! Your review has been submitted.', {
         duration: 4000,
@@ -368,11 +378,13 @@ export default function TestimonialSection() {
       setShowReviewForm(false);
 
       // Refresh testimonials to show the new one
+      console.log('Refreshing testimonials...');
       await fetchTestimonials();
+      console.log('Testimonials refreshed');
 
     } catch (error: any) {
       console.error('Error submitting review:', error);
-      toast.error('Failed to submit review. Please try again.');
+      toast.error(`Failed to submit review: ${error.message || 'Please try again.'}`);
     } finally {
       setSubmittingReview(false);
     }
