@@ -332,11 +332,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      // Get the current origin for redirect URL
-      const redirectUrl = `${window.location.origin}/new-password-reset`;
+      // Use the correct redirect URL that matches your app routing
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
+        // Add these options to help with delivery
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            redirect_to: redirectUrl
+          }
+        }
       });
 
       if (error) {

@@ -33,9 +33,13 @@ export default function AuthCallback() {
           
           // Check if this is a recovery session (password reset)
           const urlType = searchParams.get('type');
-          if (urlType === 'recovery' || window.location.hash.includes('type=recovery')) {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const hashType = hashParams.get('type');
+          
+          if (urlType === 'recovery' || hashType === 'recovery') {
             console.log('Recovery session detected, redirecting to reset password');
-            navigate('/reset-password');
+            // Create a simple password reset page
+            navigate('/new-password-reset');
             return;
           }
           
