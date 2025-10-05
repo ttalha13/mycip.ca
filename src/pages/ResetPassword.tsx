@@ -20,6 +20,7 @@ export default function ResetPassword() {
   useEffect(() => {
     const checkRecoverySession = async () => {
       try {
+        console.log('Checking recovery session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -36,7 +37,7 @@ export default function ResetPassword() {
           return;
         }
         
-        console.log('Valid recovery session found');
+        console.log('Valid recovery session found for:', session.user.email);
       } catch (error) {
         console.error('Error checking recovery session:', error);
         toast.error('Invalid or expired reset link. Please request a new one.');
@@ -44,7 +45,9 @@ export default function ResetPassword() {
       }
     };
     
-    checkRecoverySession();
+    // Add a small delay to ensure the session is properly set
+    const timer = setTimeout(checkRecoverySession, 500);
+    return () => clearTimeout(timer);
   }, [navigate]);
   const validatePassword = (pass: string): string | null => {
     if (pass.length < 6) {

@@ -15,104 +15,35 @@ export default function AuthCallback() {
       try {
         setProcessing(true);
         
-        // Get URL parameters
-        const hash = window.location.hash;
-        const urlType = searchParams.get('type');
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
+        console.log('Auth callback started');
+        console.log('URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Search params:', window.location.search);
         
-        console.log('Auth callback - type:', urlType, 'hash:', hash, 'accessToken:', !!accessToken);
-        
-        // Handle password recovery specifically
-        if (urlType === 'recovery') {
-          if (hash && hash.includes('access_token')) {
-            // Extract tokens from hash for recovery
-            const hashParams = new URLSearchParams(hash.substring(1));
-            const hashAccessToken = hashParams.get('access_token');
-            const hashRefreshToken = hashParams.get('refresh_token');
-            
-            if (hashAccessToken && hashRefreshToken) {
-              // Set the session with the tokens
-              const { data, error } = await supabase.auth.setSession({
-                access_token: hashAccessToken,
-                refresh_token: hashRefreshToken
-              });
-              
-              if (error) {
-                throw error;
-              }
-              
-              if (data.session) {
-                console.log('Recovery session established, redirecting to reset password');
-                navigate('/reset-password');
-                return;
-              }
-            }
-          } else if (accessToken && refreshToken) {
-            // Handle tokens from URL parameters
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-            
-            if (error) {
-              throw error;
-            }
-            
-            if (data.session) {
-              console.log('Recovery session established from params, redirecting to reset password');
-              navigate('/reset-password');
-              return;
-            }
-          }
-          
-          throw new Error('Invalid recovery link. Missing authentication tokens.');
-        }
-        
-        // Handle regular authentication (magic links, etc.)
-        if (hash && hash.includes('access_token')) {
-          // Let Supabase handle the hash for regular auth
-          const { data, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            throw error;
-          }
-          
-          if (data.session) {
-            setSuccess(true);
-            setTimeout(() => navigate('/'), 1500);
-            return;
-          }
-        }
-        
-        // Handle email verification tokens
-        const email = searchParams.get('email');
-        const token = searchParams.get('token');
-        
-        if (!email || !token) {
-          console.error('Missing email or token in URL');
-          setError('Invalid login link. Missing required parameters.');
-          setTimeout(() => navigate('/login'), 3000);
-          return;
-        }
-        
-        // Verify the OTP
-        const { data, error } = await supabase.auth.verifyOtp({
-          type: 'magiclink',
-          email,
-          token,
-        });
+        // Let Supabase automatically handle the auth callback
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error verifying OTP:', error);
+          console.error('Error getting session after callback:', error);
           throw error;
         }
         
         if (data.session) {
+          console.log('Session established:', data.session.user.email);
+          
+          // Check if this is a recovery session (password reset)
+          const urlType = searchParams.get('type');
+          if (urlType === 'recovery' || window.location.hash.includes('type=recovery')) {
+            console.log('Recovery session detected, redirecting to reset password');
+            navigate('/reset-password');
+            return;
+          }
+          
+          // Regular sign in
           setSuccess(true);
           setTimeout(() => navigate('/'), 1500);
         } else {
-          throw new Error('No session created after verification');
+          throw new Error('No session created after authentication');
         }
       } catch (error: any) {
         console.error('Error in auth callback:', error);
