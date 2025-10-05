@@ -280,10 +280,8 @@ export default function SimplePasswordReset() {
           <div className="relative">
             <input
               id="newPassword"
-              name="newpassword"
+              name="new-password"
               autoComplete="new-password"
-              data-lpignore="true"
-              data-1p-ignore="true"
               type={showNewPassword ? 'text' : 'password'}
               required
               className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -317,8 +315,10 @@ export default function SimplePasswordReset() {
           <div className="relative">
             <input
               id="confirmPassword"
-              name="confirm-password"
+              name="confirmpassword"
               autoComplete="new-password"
+              data-lpignore="true"
+              data-1p-ignore="true"
               type={showConfirmPassword ? 'text' : 'password'}
               required
               className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
