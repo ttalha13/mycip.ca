@@ -121,6 +121,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error('Please enter both email and password') };
     }
 
+    // Check for temporary password reset first
+    try {
+      const tempPasswordData = localStorage.getItem('temp_new_password');
+      if (tempPasswordData) {
+        const { email: tempEmail, password: tempPassword, expiry } = JSON.parse(tempPasswordData);
+        if (tempEmail === trimmedEmail && Date.now() < expiry) {
+          if (password === tempPassword) {
+            // Use the new password and clean up
+            localStorage.removeItem('temp_new_password');
+            console.log('✅ Using temporary reset password');
+            
+            // Create/update local user with new password
+            const localUsers = getLocalUsers();
+            const existingIndex = localUsers.findIndex(u => u.email === trimmedEmail);
+            if (existingIndex >= 0) {
+              localUsers[existingIndex].password = password;
+            } else {
+              localUsers.push({
+                email: trimmedEmail,
+                password: password,
+                id: Date.now().toString()
+              });
+            }
+            saveLocalUsers(localUsers);
+            
+            const userData = { 
+              email: trimmedEmail, 
+              id: Date.now().toString(),
+              source: 'local' as const
+            };
+            setUser(userData);
+            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
+            return { error: null };
+          }
+        } else if (Date.now() >= expiry) {
+          // Clean up expired temp password
+          localStorage.removeItem('temp_new_password');
+        }
+      }
+    } catch (error) {
+      console.log('Error checking temp password:', error);
+    }
+
     // First try Supabase authentication
     try {
       console.log('🔄 Trying Supabase authentication for:', trimmedEmail);
