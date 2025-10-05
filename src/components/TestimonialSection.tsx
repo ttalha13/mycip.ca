@@ -21,6 +21,9 @@ export default function TestimonialSection() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     comment: '',
@@ -32,8 +35,8 @@ export default function TestimonialSection() {
   const headerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  // High-quality, secure testimonials data
-  const testimonials: Testimonial[] = [
+  // Fallback testimonials data
+  const fallbackTestimonials: Testimonial[] = [
     {
       id: '1',
       user_name: 'Sarah Chen',
@@ -96,16 +99,73 @@ export default function TestimonialSection() {
     }
   ];
 
+  const getAvatarColor = (name: string): string => {
+    const colors = [
+      'from-pink-400 to-purple-600',
+      'from-blue-400 to-cyan-600', 
+      'from-green-400 to-emerald-600',
+      'from-orange-400 to-red-600',
+      'from-purple-400 to-indigo-600',
+      'from-teal-400 to-blue-600',
+      'from-yellow-400 to-orange-600',
+      'from-indigo-400 to-purple-600'
+    ];
+    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    return colors[index];
+  };
+
+  const fetchTestimonials = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (fetchError) {
+        console.error('Error fetching testimonials:', fetchError);
+        throw fetchError;
+      }
+
+      if (data && data.length > 0) {
+        const formattedTestimonials = data.map(testimonial => ({
+          ...testimonial,
+          avatar_color: getAvatarColor(testimonial.user_name),
+          country: 'Canada' // Default country since we don't store this
+        }));
+        setTestimonials(formattedTestimonials);
+      } else {
+        // Use fallback testimonials if no data
+        setTestimonials(fallbackTestimonials);
+      }
+    } catch (error: any) {
+      console.error('Error in fetchTestimonials:', error);
+      setError('Failed to load testimonials');
+      // Use fallback testimonials on error
+      setTestimonials(fallbackTestimonials);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
-    { icon: Users, value: '50+', label: 'Success Stories', color: 'text-red-500' },
+    { icon: Users, value: `${testimonials.length}+`, label: 'Success Stories', color: 'text-red-500' },
     { icon: TrendingUp, value: '98.5%', label: 'Success Rate', color: 'text-green-500' },
     { icon: Award, value: '10', label: 'Provinces Covered', color: 'text-blue-500' },
     { icon: Globe, value: '10+', label: 'Countries', color: 'text-purple-500' }
   ];
 
+  // Fetch testimonials on component mount
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
+
   // Initialize GSAP animations
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || loading) return;
 
     // Animate header on mount
     gsap.fromTo(headerRef.current, 
@@ -139,10 +199,12 @@ export default function TestimonialSection() {
       }
     });
 
-  }, []);
+  }, [loading, currentIndex]);
 
   // Auto-rotate testimonials
   useEffect(() => {
+    if (loading || testimonials.length === 0) return;
+    
     const interval = setInterval(() => {
       if (!isAnimating) {
         nextTestimonial();
@@ -150,10 +212,10 @@ export default function TestimonialSection() {
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [currentIndex, isAnimating]);
+  }, [currentIndex, isAnimating, loading, testimonials.length]);
 
   const nextTestimonial = () => {
-    if (isAnimating) return;
+    if (isAnimating || testimonials.length <= 1) return;
     setIsAnimating(true);
     
     const nextIndex = (currentIndex + 1) % testimonials.length;
@@ -161,7 +223,7 @@ export default function TestimonialSection() {
   };
 
   const prevTestimonial = () => {
-    if (isAnimating) return;
+    if (isAnimating || testimonials.length <= 1) return;
     setIsAnimating(true);
     
     const prevIndex = currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1;
@@ -169,7 +231,7 @@ export default function TestimonialSection() {
   };
 
   const goToTestimonial = (index: number) => {
-    if (isAnimating || index === currentIndex) return;
+    if (isAnimating || index === currentIndex || testimonials.length <= 1) return;
     setIsAnimating(true);
     animateTransition(index);
   };
@@ -303,6 +365,9 @@ export default function TestimonialSection() {
       });
       setShowReviewForm(false);
 
+      // Refresh testimonials to show the new one
+      await fetchTestimonials();
+
     } catch (error: any) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review. Please try again.');
@@ -322,6 +387,31 @@ export default function TestimonialSection() {
       />
     ));
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+              Success Stories That Inspire
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              Real journeys, real results. Discover how thousands achieved their Canadian dream through MyCIP
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Loader2 className="animate-spin h-12 w-12 mx-auto text-purple-500 mb-4" />
+              <p className="text-gray-600 dark:text-gray-300">Loading success stories...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 overflow-hidden">
@@ -448,31 +538,33 @@ export default function TestimonialSection() {
           <div className="flex items-center justify-center mt-12 space-x-6">
             <button
               onClick={prevTestimonial}
-              disabled={isAnimating}
+              disabled={isAnimating || testimonials.length <= 1}
               className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
             </button>
 
             {/* Indicators */}
-            <div className="flex space-x-2">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToTestimonial(index)}
-                  disabled={isAnimating}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    index === currentIndex
-                      ? 'bg-red-500 scale-125'
-                      : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
-                  }`}
-                />
-              ))}
-            </div>
+            {testimonials.length > 1 && (
+              <div className="flex space-x-2">
+                {testimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToTestimonial(index)}
+                    disabled={isAnimating}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentIndex
+                        ? 'bg-red-500 scale-125'
+                        : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
 
             <button
               onClick={nextTestimonial}
-              disabled={isAnimating}
+              disabled={isAnimating || testimonials.length <= 1}
               className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <ChevronRight className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
