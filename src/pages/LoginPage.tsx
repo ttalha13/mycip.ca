@@ -454,7 +454,7 @@ export default function LoginPage() {
           {!isSignUp && (
             <div className="mt-4 text-center">
               <button
-                onClick={() => setIsForgotPassword(true)}
+                onClick={() => navigate('/new-password-reset')}
                 className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
               >
                 Forgot your password?
