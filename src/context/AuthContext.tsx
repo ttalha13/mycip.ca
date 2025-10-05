@@ -39,11 +39,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
+          
+          // Handle refresh token errors by clearing stale session data
+          if (error.message?.includes('Invalid Refresh Token') || 
+              error.message?.includes('Refresh Token Not Found')) {
+            console.log('Clearing stale session due to invalid refresh token');
+            await supabase.auth.signOut();
+            setUser(null);
+            return;
+          }
         } else {
           setUser(session?.user ?? null);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // Clear any stale session data on general exceptions
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutError) {
+          console.error('Error signing out during cleanup:', signOutError);
+        }
+        setUser(null);
       } finally {
         setLoading(false);
       }
