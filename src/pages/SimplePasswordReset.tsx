@@ -108,38 +108,21 @@ export default function SimplePasswordReset() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       
-      // Store the new password and let AuthContext handle it
-      localStorage.setItem('temp_new_password', JSON.stringify({
-        email: trimmedEmail,
-        password: newPassword,
-        expiry: Date.now() + (24 * 60 * 60 * 1000)
-      }));
+      // HONEST SOLUTION: Quick reset is fundamentally flawed
+      // We can't update Supabase passwords without authentication
+      // So let's be honest about what this feature does:
       
-      // Try to sign in with the new password
-      const signInResult = await signInWithPassword(trimmedEmail, newPassword);
+      toast.error('⚠️ SYSTEM LIMITATION: Quick reset cannot actually update your password in Supabase. This feature is for demonstration only. Please use the regular "Forgot Password" feature instead.', {
+        duration: 8000,
+      });
       
-      if (signInResult.error) {
-        // Sign in failed, redirect to login page
-        toast.success('Password reset complete! Please sign in with your new password.', {
-          duration: 6000,
-        });
-        
-        localStorage.removeItem('temp_reset_token');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        // Successfully signed in, redirect to home
-        toast.success('Password updated and signed in successfully!', {
-          duration: 4000,
-        });
-        
-        localStorage.removeItem('temp_reset_token');
-        localStorage.removeItem('temp_new_password');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1500);
-      }
+      // Clean up
+      localStorage.removeItem('temp_reset_token');
+      
+      // Redirect to regular password reset
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
 
     } catch (error: any) {
       console.error('Error in password reset:', error);
