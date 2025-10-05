@@ -93,12 +93,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Debounce auth state changes to prevent rapid updates
-        setTimeout(() => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }, 100);
+        console.log('Auth state changed:', event, session?.user?.email);
+        setUser(session?.user ?? null);
+        setLoading(false);
 
         // Create or update user profile when user signs in
         if (event === 'SIGNED_IN' && session?.user) {

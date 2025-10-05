@@ -24,7 +24,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (user) {
       const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      // Add a small delay to ensure state is properly updated
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
     }
   }, [user, navigate, location]);
 
