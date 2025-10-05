@@ -1,54 +1,108 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, Loader2, AlertCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
 export default function ResetPassword() {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { theme } = useTheme();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
-  // Check if user has a valid recovery session
+  // Handle auth state change and check for recovery session
   useEffect(() => {
-    const checkRecoverySession = async () => {
+    let mounted = true;
+
+    const handleAuthStateChange = async () => {
       try {
-        console.log('Checking recovery session...');
+        // First, let Supabase process any auth tokens from the URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
+        const type = hashParams.get('type') || urlParams.get('type');
+        
+        console.log('Reset password page - Auth params:', { 
+          hasAccessToken: !!accessToken, 
+          hasRefreshToken: !!refreshToken, 
+          type 
+        });
+
+        // If we have tokens, let Supabase handle them
+        if (accessToken && refreshToken && type === 'recovery') {
+          console.log('Processing recovery tokens...');
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error('Error setting recovery session:', error);
+            if (mounted) {
+              toast.error('Invalid or expired reset link. Please request a new one.');
+              navigate('/login');
+            }
+            return;
+          }
+          
+          console.log('Recovery session set successfully:', data.user?.email);
+          if (mounted) {
+            setSessionChecked(true);
+            // Clear the URL parameters
+            window.history.replaceState({}, document.title, '/reset-password');
+          }
+          return;
+        }
+
+        // Check existing session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
-          toast.error('Invalid or expired reset link. Please request a new one.');
-          navigate('/login');
+          if (mounted) {
+            toast.error('Invalid or expired reset link. Please request a new one.');
+            navigate('/login');
+          }
           return;
         }
         
         if (!session) {
           console.log('No session found for password reset');
-          toast.error('Invalid or expired reset link. Please request a new one.');
-          navigate('/login');
+          if (mounted) {
+            toast.error('Invalid or expired reset link. Please request a new one.');
+            navigate('/login');
+          }
           return;
         }
         
         console.log('Valid recovery session found for:', session.user.email);
+        if (mounted) {
+          setSessionChecked(true);
+        }
       } catch (error) {
         console.error('Error checking recovery session:', error);
-        toast.error('Invalid or expired reset link. Please request a new one.');
-        navigate('/login');
+        if (mounted) {
+          toast.error('Invalid or expired reset link. Please request a new one.');
+          navigate('/login');
+        }
       }
     };
     
-    // Add a small delay to ensure the session is properly set
-    const timer = setTimeout(checkRecoverySession, 500);
-    return () => clearTimeout(timer);
+    handleAuthStateChange();
+    
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
+
   const validatePassword = (pass: string): string | null => {
     if (pass.length < 6) {
       return 'Password must be at least 6 characters long';
@@ -96,6 +150,18 @@ export default function ResetPassword() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 mx-auto text-purple-500 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Verifying reset link...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">

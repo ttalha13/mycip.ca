@@ -20,8 +20,8 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}
               <Route

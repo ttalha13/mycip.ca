@@ -267,9 +267,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      // Use the current origin for development, production URL for production
+      // Use a simple redirect to reset password page
       const baseUrl = import.meta.env.DEV ? window.location.origin : 'https://mycip.ca';
-      const redirectUrl = `${baseUrl}/auth/callback?type=recovery`;
+      const redirectUrl = `${baseUrl}/reset-password`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
