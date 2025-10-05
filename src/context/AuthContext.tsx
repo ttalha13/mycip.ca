@@ -149,50 +149,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     }
 
-    // Check if user has a temporary new password from simple reset
-    const tempPasswordData = localStorage.getItem('temp_new_password');
-    if (tempPasswordData) {
-      try {
-        const { email: tempEmail, newPassword, timestamp } = JSON.parse(tempPasswordData);
-        // Check if it's within 24 hours and for the same email
-        if (tempEmail === trimmedEmail && 
-            Date.now() - timestamp < 24 * 60 * 60 * 1000 && 
-            password === newPassword) {
-          
-          if (import.meta.env.DEV) {
-            console.log('Found temporary new password, attempting to update in Supabase');
-          }
-          
-          // Try to sign in with any existing password first to get a session
-          // This is a workaround - in production you'd handle this server-side
-          try {
-            // First, try to get the user by email and update their password
-            // We'll use the admin approach by trying to sign in with a recovery session
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-              redirectTo: `${window.location.origin}/auth/callback`,
-            });
-            
-            if (!resetError) {
-              // Clear the temp password since we've initiated the proper reset
-              localStorage.removeItem('temp_new_password');
-              
-              return {
-                error: new Error('Please check your email for a password reset link to complete the process.'),
-                message: 'Password reset initiated'
-              };
-            }
-          } catch (resetError) {
-            console.error('Error initiating password reset:', resetError);
-          }
-          
-          // If reset fails, clear temp password and proceed with normal login
-          localStorage.removeItem('temp_new_password');
-        }
-      } catch (error) {
-        console.error('Error processing temp password:', error);
-        localStorage.removeItem('temp_new_password');
-      }
-    }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
