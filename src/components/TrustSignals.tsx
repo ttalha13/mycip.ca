@@ -12,6 +12,8 @@ export default function TrustSignals() {
       title: 'Expert Guidance',
       value: '13',
       label: 'Jurisdictions Covered',
+      description: 'Expert guidance across multiple jurisdictions'
+    },
     {
       icon: Users,
       title: 'Community Driven',
