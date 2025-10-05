@@ -330,9 +330,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      // Use production URL for redirect
+      // Use correct redirect URL for reset password page
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://mycip.ca';
-      const redirectUrl = `${baseUrl}/auth/callback?type=recovery`;
+      const redirectUrl = `${baseUrl}/reset-password`;
       
       console.log('🔗 Password reset redirect URL:', redirectUrl);
       console.log('🌐 Current environment:', import.meta.env.DEV ? 'development' : 'production');

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle, Key } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-export default function NewPasswordReset() {
+export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -13,28 +14,33 @@ export default function NewPasswordReset() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // Check if we have a valid recovery session
-    const checkSession = async () => {
+    const handlePasswordReset = async () => {
       try {
-        console.log('🔍 Checking recovery session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🔍 Checking for password reset session...');
+        console.log('🔗 Current URL:', window.location.href);
+        console.log('🔍 Search params:', window.location.search);
+        console.log('🔍 Hash:', window.location.hash);
+
+        // Get the session to check if user is authenticated for password reset
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('❌ Session error:', error);
+        console.log('📋 Session check:', {
+          hasSession: !!session,
+          userEmail: session?.user?.email,
+          error: sessionError
+        });
+
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError);
           setError('Invalid or expired reset link. Please request a new password reset.');
           return;
         }
 
-        console.log('📋 Session data:', {
-          hasSession: !!session,
-          userEmail: session?.user?.email,
-          sessionType: session?.user?.aud
-        });
-        
         if (session && session.user) {
-          console.log('✅ Valid recovery session found for:', session.user.email);
+          console.log('✅ Valid password reset session found for:', session.user.email);
           setIsValidSession(true);
         } else {
           console.log('❌ No valid session found');
@@ -43,10 +49,12 @@ export default function NewPasswordReset() {
       } catch (error) {
         console.error('💥 Error checking session:', error);
         setError('Something went wrong. Please try again.');
+      } finally {
+        setCheckingSession(false);
       }
     };
 
-    checkSession();
+    handlePasswordReset();
   }, []);
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -71,14 +79,19 @@ export default function NewPasswordReset() {
     setLoading(true);
 
     try {
+      console.log('🔄 Updating password...');
+      
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) {
+        console.error('❌ Password update error:', error);
         throw error;
       }
 
+      console.log('✅ Password updated successfully');
+      
       toast.success('Password updated successfully!', {
         duration: 3000,
       });
@@ -89,14 +102,14 @@ export default function NewPasswordReset() {
       }, 2000);
 
     } catch (error: any) {
-      console.error('Error updating password:', error);
+      console.error('💥 Error updating password:', error);
       setError(error.message || 'Failed to update password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isValidSession && !error) {
+  if (checkingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">

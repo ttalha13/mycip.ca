@@ -9,8 +9,7 @@ import ProvincePage from './pages/ProvincePage';
 import LoginPage from './pages/LoginPage';
 import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
-import SimplePasswordReset from './pages/SimplePasswordReset';
-import NewPasswordReset from './pages/NewPasswordReset';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -21,7 +20,7 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/new-password-reset" element={<NewPasswordReset />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}
