@@ -12,6 +12,7 @@ import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import NewPasswordReset from './pages/NewPasswordReset';
 import DirectPasswordReset from './pages/DirectPasswordReset';
+import SimplePasswordReset from './pages/SimplePasswordReset';
 
 function App() {
   return (
