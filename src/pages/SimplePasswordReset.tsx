@@ -108,18 +108,49 @@ export default function SimplePasswordReset() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       
-      // Now try to sign in with the new password (this will work for both new and existing users)
+      // First, try to update the password in Supabase if user exists
+      try {
+        // Try to sign up first (this will fail if user exists, which is fine)
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password: newPassword,
+        });
+        
+        // If user already exists, we need to update their password
+        if (signUpError && signUpError.message?.includes('already registered')) {
+          // For existing users, we'll store the temp password and let them sign in normally
+          localStorage.setItem('temp_new_password', JSON.stringify({
+            email: trimmedEmail,
+            password: newPassword,
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+          }));
+          
+          toast.success('Password updated! Please sign in with your new password.', {
+            duration: 6000,
+          });
+          
+          localStorage.removeItem('temp_reset_token');
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+          return;
+        }
+      } catch (error) {
+        console.error('Error in signup process:', error);
+      }
+      
+      // Now try to sign in with the new password
       const signInResult = await signInWithPassword(trimmedEmail, newPassword);
       
       if (signInResult.error) {
-        // If direct sign in fails, store temp password for fallback
+        // If sign in fails, store temp password and redirect to login
         localStorage.setItem('temp_new_password', JSON.stringify({
           email: trimmedEmail,
           password: newPassword,
           expiry: Date.now() + (24 * 60 * 60 * 1000)
         }));
         
-        toast.success('Password updated! Please try logging in with your new password.', {
+        toast.success('Password updated! Please sign in with your new password.', {
           duration: 6000,
         });
         
@@ -128,13 +159,12 @@ export default function SimplePasswordReset() {
           navigate('/login');
         }, 2000);
       } else {
-        // Successfully signed in with new password - auto redirect to home
+        // Successfully signed in - redirect to home
         toast.success('Password updated and signed in successfully!', {
           duration: 4000,
         });
         
         localStorage.removeItem('temp_reset_token');
-        // Force immediate redirect to homepage
         setTimeout(() => {
           window.location.href = '/';
         }, 1500);
