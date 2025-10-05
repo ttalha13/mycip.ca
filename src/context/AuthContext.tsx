@@ -314,6 +314,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const trimmedEmail = email.trim().toLowerCase();
     
     console.log('🔄 Starting password reset for:', trimmedEmail);
+    console.log('🌐 Environment:', import.meta.env.DEV ? 'development' : 'production');
     
     if (!trimmedEmail) {
       return {
@@ -331,11 +332,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       // Use correct redirect URL for reset password page
-      const baseUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://mycip.ca';
-      const redirectUrl = `${baseUrl}/reset-password`;
+      const redirectUrl = import.meta.env.DEV 
+        ? 'http://localhost:3000/reset-password' 
+        : 'https://mycip.ca/reset-password';
       
-      console.log('🔗 Password reset redirect URL:', redirectUrl);
-      console.log('🌐 Current environment:', import.meta.env.DEV ? 'development' : 'production');
+      console.log('🔗 Using redirect URL:', redirectUrl);
+      console.log('📧 Sending reset email to:', trimmedEmail);
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
@@ -346,14 +348,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) {
         console.error('❌ Supabase password reset error:', error);
         
+        // More specific error handling
         // Handle specific error cases
         if (error.message?.includes('over_email_send_rate_limit') || 
             error.message?.includes('rate limit') ||
             error.message?.includes('429') ||
-            error.message?.includes('For security purposes, you can only request this after')) {
+            error.message?.includes('For security purposes')) {
           return {
-            error: new Error('Too many password reset requests. Please wait 60 seconds before trying again.'),
+            error: new Error('Too many requests. Please wait a minute before trying again.'),
             message: 'Rate limited'
+          };
+        }
+        
+        // Handle user not found
+        if (error.message?.includes('User not found')) {
+          return {
+            error: new Error('No account found with this email address.'),
+            message: 'User not found'
           };
         }
         
@@ -361,16 +372,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       console.log('✅ Password reset email sent successfully for:', trimmedEmail);
-      console.log('📬 Check your email for the reset link');
+      console.log('📬 User should check email (including spam folder)');
       
       return { 
         error: null,
-        message: 'Password reset email sent! Please check your inbox and spam folder. The link will redirect you back to set a new password.' 
+        message: 'Password reset email sent! Please check your inbox and spam folder.' 
       };
     } catch (error: any) {
       console.error('💥 Password reset exception:', error);
       return {
-        error: new Error(error.message || 'Failed to send password reset email. Please try again.'),
+        error: new Error(error.message || 'Something went wrong. Please try again.'),
         message: 'Reset failed'
       };
     }
