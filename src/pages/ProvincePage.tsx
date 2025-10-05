@@ -76,9 +76,9 @@ export default function ProvincePage() {
           </div>
         </div>
 
-        {/* Nunavut Information Section */}
+        {/* Nunavut Information Section - Available on all province pages */}
         <div className="mt-12">
-          <section className="bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-6 rounded-2xl shadow-sm leading-relaxed space-y-6">
+          <section className="bg-blue-50 dark:bg-blue-900/20 text-gray-800 dark:text-gray-200 p-6 rounded-2xl shadow-sm leading-relaxed space-y-6 border border-blue-200 dark:border-blue-800">
             <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400">🇨🇦 Nunavut Immigration Guide</h2>
 
             <section>
