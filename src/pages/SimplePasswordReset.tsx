@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle, ArrowLeft, Key } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle, AlertCircle, ArrowLeft, Key } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
 
@@ -14,10 +14,8 @@ export default function SimplePasswordReset() {
   const [step, setStep] = useState<'token' | 'reset' | 'success'>('token');
   const [email, setEmail] = useState('');
   const [tempToken, setTempToken] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -108,31 +106,24 @@ export default function SimplePasswordReset() {
 
     setLoading(true);
     try {
-      // Try to create/update user account directly in Supabase
       const trimmedEmail = email.trim().toLowerCase();
       
-      // First try to sign up (in case user doesn't exist)
+      // Simple approach: Try to create user first, then sign in
       const { error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: newPassword,
-        options: {
-          emailRedirectTo: window.location.origin + '/auth/callback'
-        }
       });
       
+      // If user already exists, that's fine - we'll sign them in
       if (signUpError && !signUpError.message?.includes('already registered')) {
-        throw signUpError;
+        console.error('Sign up error:', signUpError);
       }
       
-      // Now try to sign in with the new password
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: newPassword
-      });
+      // Now try to sign in with the new password (this will work for both new and existing users)
+      const signInResult = await signInWithPassword(trimmedEmail, newPassword);
       
-      if (signInError) {
-        // If sign in fails, the user might exist but with old password
-        // Store temp password for the auth context to handle
+      if (signInResult.error) {
+        // If direct sign in fails, store temp password for fallback
         localStorage.setItem('temp_new_password', JSON.stringify({
           email: trimmedEmail,
           password: newPassword,
@@ -142,25 +133,22 @@ export default function SimplePasswordReset() {
         toast.success('Password updated! Please try logging in with your new password.', {
           duration: 6000,
         });
+        
+        localStorage.removeItem('temp_reset_token');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       } else {
-        // Successfully signed in with new password
+        // Successfully signed in with new password - auto redirect to home
         toast.success('Password updated and signed in successfully!', {
           duration: 4000,
         });
         
-        // Clear the token and redirect to home
         localStorage.removeItem('temp_reset_token');
         setTimeout(() => {
           navigate('/');
         }, 2000);
-        return;
       }
-
-      localStorage.removeItem('temp_reset_token');
-      setStep('success');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
 
     } catch (error: any) {
       console.error('Error in password reset:', error);
@@ -196,7 +184,7 @@ export default function SimplePasswordReset() {
         </div>
       )}
 
-      <form onSubmit={handleTokenRequest} className="space-y-4">
+      <form onSubmit={handleTokenRequest} className="space-y-4" autoComplete="off">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Email Address
@@ -204,6 +192,8 @@ export default function SimplePasswordReset() {
           <input
             id="email"
             type="email"
+            name="reset-email"
+            autoComplete="off"
             required
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             placeholder="Enter your email address"
@@ -252,7 +242,7 @@ export default function SimplePasswordReset() {
         </div>
       )}
 
-      <form onSubmit={handlePasswordReset} className="space-y-4">
+      <form onSubmit={handlePasswordReset} className="space-y-4" autoComplete="off">
         <div>
           <label htmlFor="tempToken" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             6-Digit Reset Token
@@ -260,8 +250,10 @@ export default function SimplePasswordReset() {
           <input
             id="tempToken"
             type="text"
-            name="reset-token"
-            autoComplete="off"
+            name="verification-code"
+            autoComplete="one-time-code"
+            data-lpignore="true"
+            data-1p-ignore="true"
             data-form-type="other"
             required
             maxLength={6}
@@ -282,6 +274,8 @@ export default function SimplePasswordReset() {
               id="newPassword"
               name="new-password"
               autoComplete="new-password"
+              data-lpignore="true"
+              data-1p-ignore="true"
               type={showNewPassword ? 'text' : 'password'}
               required
               className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -315,7 +309,7 @@ export default function SimplePasswordReset() {
           <div className="relative">
             <input
               id="confirmPassword"
-              name="confirmpassword"
+              name="confirm-new-password"
               autoComplete="new-password"
               data-lpignore="true"
               data-1p-ignore="true"
@@ -362,6 +356,8 @@ export default function SimplePasswordReset() {
           onClick={() => {
             setStep('token');
             setTempToken('');
+            setNewPassword('');
+            setConfirmPassword('');
             setError(null);
           }}
           className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
