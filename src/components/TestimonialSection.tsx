@@ -93,7 +93,7 @@ export default function TestimonialSection() {
   };
 
   const stats = [
-    { icon: Users, value: `${testimonials.length}+`, label: 'Success Stories', color: 'text-red-500' },
+    { icon: Users, value: '100+', label: 'Success Stories', color: 'text-red-500' },
     { icon: TrendingUp, value: '98.5%', label: 'Success Rate', color: 'text-green-500' },
     { icon: Award, value: '10', label: 'Provinces Covered', color: 'text-blue-500' },
     { icon: Globe, value: '10+', label: 'Countries', color: 'text-purple-500' }
