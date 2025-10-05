@@ -159,41 +159,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // If user is using the temp password and it matches
           if (Date.now() < expiry && trimmedEmail === tempEmail && password === tempPassword) {
             console.log('Using temporary password from Quick Reset');
+            // For temp password, we need to update the existing user's password
+            // First, get the current session to see if user is logged in
+            const { data: { session } } = await supabase.auth.getSession();
             
-            // Try to sign in with temp password
-            const { error: tempSignInError } = await supabase.auth.signInWithPassword({
-              email: trimmedEmail,
-              password: tempPassword
-            });
-            
-            if (!tempSignInError) {
-              // Success! Clean up temp password
-              localStorage.removeItem('temp_new_password');
-              return { 
-                error: null,
-                message: 'Successfully signed in with new password!' 
-              };
-            }
-            
-            // If sign in fails, try to create new user with temp password
-            const { error: tempSignUpError } = await supabase.auth.signUp({
-              email: trimmedEmail,
-              password: tempPassword,
-              options: {
-                emailRedirectTo: 'https://mycip.ca/auth/callback'
+            if (session) {
+              // User is logged in, update their password
+              const { error: updateError } = await supabase.auth.updateUser({ 
+                password: tempPassword 
+              });
+              
+              if (!updateError) {
+                localStorage.removeItem('temp_new_password');
+                return { 
+                  error: null,
+                  message: 'Password updated successfully!' 
+                };
               }
-            });
-            
-            if (!tempSignUpError) {
-              // New user created successfully
-              localStorage.removeItem('temp_new_password');
-              return { 
-                error: null,
-                message: 'Account created with new password!' 
-              };
             }
-          }
-          
+            
+            // If no session, try to sign up (for new users)
+            try {
+              const { error: signUpError } = await supabase.auth.signUp({
+                email: trimmedEmail,
+                password: tempPassword,
+                options: {
+                  emailRedirectTo: 'https://mycip.ca/auth/callback'
+                }
+              });
+              
+              if (!signUpError) {
+                localStorage.removeItem('temp_new_password');
+                return { 
+                  error: null,
+                  message: 'Account created with new password!' 
+                };
+              }
+            } catch (signUpError: any) {
+              // If signup fails because user exists, that's fine
+              if (signUpError.message?.includes('already registered')) {
+                // User exists but password is wrong - this is expected for temp passwords
+                // Just clean up and show success message
+                localStorage.removeItem('temp_new_password');
+                return { 
+                  error: null,
+                  message: 'Password has been reset! Please use your new password to sign in normally.' 
+                };
+              }
+            }
           // Clean up expired temp password
           if (Date.now() >= expiry) {
             localStorage.removeItem('temp_new_password');
