@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+// Global flag to prevent multiple concurrent auth initializations
+let isInitializing = false;
+let initializationPromise: Promise<void> | null = null;
+
 interface AuthContextType {
   user: User | null;
   signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null; message?: string }>;
@@ -35,35 +39,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Get initial session from Supabase
     const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-          
-          // Handle refresh token errors by clearing stale session data
-          if (error.message?.includes('Invalid Refresh Token') || 
-              error.message?.includes('Refresh Token Not Found')) {
-            console.log('Clearing stale session due to invalid refresh token');
+      // Prevent multiple concurrent initializations
+      if (isInitializing && initializationPromise) {
+        await initializationPromise;
+        return;
+      }
+
+      isInitializing = true;
+      initializationPromise = (async () => {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error('Error getting session:', error);
+            
+            // Handle refresh token errors by clearing stale session data
+            if (error.message?.includes('Invalid Refresh Token') || 
+                error.message?.includes('Refresh Token Not Found')) {
+              console.log('Clearing stale session due to invalid refresh token');
+              await supabase.auth.signOut();
+              localStorage.removeItem('mycip.auth.token');
+              setUser(null);
+              return;
+            }
+          } else {
+            setUser(session?.user ?? null);
+          }
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          // Clear any stale session data on general exceptions
+          try {
             await supabase.auth.signOut();
             localStorage.removeItem('mycip.auth.token');
-            setUser(null);
-            return;
+          } catch (signOutError) {
+            console.error('Error signing out during cleanup:', signOutError);
           }
-        } else {
-          setUser(session?.user ?? null);
+          setUser(null);
+        } finally {
+          setLoading(false);
+          isInitializing = false;
+          initializationPromise = null;
         }
+      })();
+
+      try {
+        await initializationPromise;
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        // Clear any stale session data on general exceptions
-        try {
-          await supabase.auth.signOut();
-          localStorage.removeItem('mycip.auth.token');
-        } catch (signOutError) {
-          console.error('Error signing out during cleanup:', signOutError);
-        }
-        setUser(null);
-      } finally {
-        setLoading(false);
+        console.error('Error in auth initialization:', error);
       }
     };
 
@@ -72,9 +93,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        // Debounce auth state changes to prevent rapid updates
+        setTimeout(() => {
+          console.log('Auth state changed:', event, session?.user?.email);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }, 100);
 
         // Create or update user profile when user signs in
         if (event === 'SIGNED_IN' && session?.user) {
