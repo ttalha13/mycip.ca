@@ -76,105 +76,47 @@ export default function ProvincePage() {
           </div>
         </div>
 
-        {/* Nunavut Information Section - Available on all province pages */}
-        <div className="mt-12">
-          <section className="bg-blue-50 dark:bg-blue-900/20 text-gray-800 dark:text-gray-200 p-6 rounded-2xl shadow-sm leading-relaxed space-y-6 border border-blue-200 dark:border-blue-800">
-            <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400">🇨🇦 Nunavut Immigration Guide</h2>
+        {/* Special Nunavut Information Section - Only for Nunavut page */}
+        {province.id === 'nunavut' && (
+          <div className="mt-12">
+            <section className="bg-blue-50 dark:bg-blue-900/20 text-gray-800 dark:text-gray-200 p-6 rounded-2xl shadow-sm leading-relaxed space-y-6 border border-blue-200 dark:border-blue-800">
+              <h2 className="text-3xl font-bold text-blue-700 dark:text-blue-400">🚫 Why Nunavut Has No PNP</h2>
 
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🏔 Overview</h3>
-              <p>
-                Nunavut is Canada's newest and northernmost territory, known for its stunning Arctic landscapes and rich Inuit culture.
-                However, <strong>Nunavut does not have its own Provincial Nominee Program (PNP)</strong> — unlike other provinces and territories.
-              </p>
+              <section>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🏔 About Nunavut</h3>
+                <p>
+                  Nunavut is Canada's newest and northernmost territory, created in 1999. Unlike other provinces and territories, 
+                  <strong> Nunavut does not operate its own Provincial Nominee Program (PNP)</strong>.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🏗️ Major Industries</h3>
+                <ul className="list-disc ml-6">
+                  <li>Mining & Natural Resources</li>
+                  <li>Construction & Skilled Trades</li>
+                  <li>Public Administration</li>
+                  <li>Healthcare & Education</li>
+                  <li>Tourism & Cultural Services</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">⚠️ Important Considerations</h3>
+                <ul className="list-disc ml-6">
+                  <li><strong>Population:</strong> ~40,000 people</li>
+                  <li><strong>Job Market:</strong> Limited opportunities due to small economy</li>
+                  <li><strong>Cost of Living:</strong> Very high (especially food and housing)</li>
+                  <li><strong>Climate:</strong> Arctic conditions - long winters, short summers</li>
+                  <li><strong>Language:</strong> Inuktitut, English, and French are official languages</li>
+                </ul>
+                <p>
+                  Living in Nunavut requires preparation for <strong>remote Arctic conditions</strong> and a unique cultural environment.
+                </p>
+              </section>
             </section>
-
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🚫 No Provincial Nominee Program (PNP)</h3>
-              <p>
-                Nunavut currently <strong>does not operate a PNP</strong>, which means you cannot apply directly for immigration through a Nunavut-specific program.
-                Instead, immigration to Nunavut is managed through <strong>federal immigration pathways</strong>.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🛣️ Federal Immigration Pathways to Nunavut</h3>
-              <p>Even without a PNP, there are several ways you can immigrate and work in Nunavut:</p>
-
-              <h4 className="text-lg font-semibold mt-2">1. Express Entry (Federal Program)</h4>
-              <ul className="list-disc ml-6">
-                <li>Federal Skilled Worker Program (FSWP)</li>
-                <li>Federal Skilled Trades Program (FSTP)</li>
-                <li>Canadian Experience Class (CEC)</li>
-              </ul>
-              <p>
-                Once approved for permanent residence, you are <strong>free to settle anywhere in Canada</strong>, including Nunavut.
-              </p>
-
-              <h4 className="text-lg font-semibold mt-4">2. Employer Sponsored Work Permits</h4>
-              <p>
-                If you receive a <strong>valid job offer from a Nunavut employer</strong>, you may be eligible for a temporary work permit:
-              </p>
-              <ul className="list-disc ml-6">
-                <li>LMIA-based (Labour Market Impact Assessment)</li>
-                <li>LMIA-exempt under certain programs</li>
-              </ul>
-              <p>Later, you can apply for permanent residency through a federal stream.</p>
-
-              <h4 className="text-lg font-semibold mt-4">3. Family Sponsorship & Refugee Programs</h4>
-              <p>Nunavut also welcomes newcomers through:</p>
-              <ul className="list-disc ml-6">
-                <li>Family Sponsorship (if you have eligible relatives in Canada)</li>
-                <li>Refugee or humanitarian programs</li>
-              </ul>
-              <p>These are <strong>federal programs</strong>, so they apply across all provinces and territories — Nunavut included.</p>
-            </section>
-
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">🏗️ Major Industries in Nunavut</h3>
-              <ul className="list-disc ml-6">
-                <li>Mining & Natural Resources</li>
-                <li>Construction & Skilled Trades</li>
-                <li>Public Administration</li>
-                <li>Healthcare & Education</li>
-              </ul>
-              <p>Employers in these sectors occasionally hire <strong>foreign workers</strong> to fill high-demand roles.</p>
-            </section>
-
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">⚠️ Important Notes</h3>
-              <ul className="list-disc ml-6">
-                <li><strong>Population:</strong> ~40,000 people</li>
-                <li><strong>Job Market:</strong> Limited due to small local economy</li>
-                <li><strong>Cost of Living:</strong> High (especially for groceries and housing)</li>
-                <li><strong>Climate:</strong> Arctic – long winters, short summers</li>
-              </ul>
-              <p>
-                While Nunavut offers unique opportunities and experiences, it's best suited for those prepared for <strong>remote living and extreme conditions</strong>.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-4">💡 Tip: Finding Nunavut Employers</h3>
-              <p>
-                You can find verified Nunavut employers who hire foreign workers on Canada's official{' '}
-                <a 
-                  href="https://www.jobbank.gc.ca/" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Job Bank
-                </a>.
-              </p>
-              <p>Use filters like:</p>
-              <blockquote className="border-l-4 border-blue-400 pl-4 italic mt-2">
-                Location: Nunavut<br />
-                Job Type: LMIA Approved or Open to International Applicants
-              </blockquote>
-            </section>
-          </section>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

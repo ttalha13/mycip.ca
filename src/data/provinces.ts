@@ -517,6 +517,35 @@ const provinces: Province[] = [
         url: 'https://www.princeedwardisland.ca/en/information/office-of-immigration/skilled-workers-outside-canada'
       }
     ]
+  },
+  {
+    id: 'nunavut',
+    name: 'Nunavut',
+    description: 'Canada\'s newest and northernmost territory, known for its stunning Arctic landscapes and rich Inuit culture. While Nunavut does not have its own Provincial Nominee Program (PNP), there are federal immigration pathways available for those interested in living and working in this unique territory.',
+    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&q=80&w=2000',
+    darkImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&q=80&w=2000',
+    pathways: [
+      {
+        name: 'Express Entry (Federal Program)',
+        description: 'Federal Skilled Worker Program (FSWP), Federal Skilled Trades Program (FSTP), and Canadian Experience Class (CEC). Once approved for permanent residence, you are free to settle anywhere in Canada, including Nunavut.',
+        url: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry.html'
+      },
+      {
+        name: 'Employer-Sponsored Work Permits',
+        description: 'If you receive a valid job offer from a Nunavut employer, you may be eligible for a temporary work permit through LMIA-based or LMIA-exempt programs. Later, you can apply for permanent residency through a federal stream.',
+        url: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada.html'
+      },
+      {
+        name: 'Family Sponsorship',
+        description: 'If you have eligible relatives in Canada, you may be sponsored for permanent residence. This federal program applies across all provinces and territories, including Nunavut.',
+        url: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/family-sponsorship.html'
+      },
+      {
+        name: 'Job Bank - Find Nunavut Employers',
+        description: 'Find verified Nunavut employers who hire foreign workers on Canada\'s official Job Bank. Use location filters for Nunavut and look for LMIA approved positions.',
+        url: 'https://www.jobbank.gc.ca/'
+      }
+    ]
   }
 ];
 
