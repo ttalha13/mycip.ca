@@ -20,8 +20,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
-  conditions = {Role = ["admin"], Country = ["US"]}
+  conditions = {Role = []}
 
 [build.environment]
   NODE_VERSION = "18"
@@ -55,20 +54,21 @@
   from = "/province/*"
   to = "/index.html"
   status = 200
-  force = false
+  conditions = {Role = []}
 
 [[redirects]]
   from = "/contact"
   to = "/index.html"
   status = 200
-  force = false
+  conditions = {Role = []}
 
 [[redirects]]
   from = "/login"
   to = "/index.html"
   status = 200
-  force = false
+  conditions = {Role = []}
 
+# Remove the problematic admin/country condition from catch-all
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
 
