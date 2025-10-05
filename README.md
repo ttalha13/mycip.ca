@@ -112,9 +112,7 @@ npm or yarn
 Supabase account for backend configuration
 
 Installation
-# Clone the repository
-git clone https://github.com/your-username/mycip.git
-cd mycip
+
 
 # Install dependencies
 npm install
@@ -146,4 +144,4 @@ Contributions are welcome! Feel free to open issues, submit pull requests, or su
 
 About
 
-MyCIP is not just a tool—it’s a trusted companion for your Canadian immigration journey. With verified guidance, practical tools, and community support, MyCIP helps users move forward with confidence—without wasting time or being overwhelmed.
+MyCIP is not just a tool, it is a trusted companion for your Canadian immigration journey. With verified guidance, practical tools, and community support, MyCIP helps users move forward with confidence without wasting time or being overwhelmed.
