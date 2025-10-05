@@ -19,8 +19,26 @@ export default function ResetPassword() {
   // Check if user has a valid recovery session
   useEffect(() => {
     const checkRecoverySession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          toast.error('Invalid or expired reset link. Please request a new one.');
+          navigate('/login');
+          return;
+        }
+        
+        if (!session) {
+          console.log('No session found for password reset');
+          toast.error('Invalid or expired reset link. Please request a new one.');
+          navigate('/login');
+          return;
+        }
+        
+        console.log('Valid recovery session found');
+      } catch (error) {
+        console.error('Error checking recovery session:', error);
         toast.error('Invalid or expired reset link. Please request a new one.');
         navigate('/login');
       }
