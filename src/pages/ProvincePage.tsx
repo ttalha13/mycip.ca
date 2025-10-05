@@ -108,10 +108,10 @@ export default function ProvincePage() {
                 <li>Canadian Experience Class (CEC)</li>
               </ul>
               <p>
-                Once approved for permanent residence, you're <strong>free to settle anywhere in Canada</strong>, including Nunavut.
+                Once approved for permanent residence, you are <strong>free to settle anywhere in Canada</strong>, including Nunavut.
               </p>
 
-              <h4 className="text-lg font-semibold mt-4">2. Employer-Sponsored Work Permits</h4>
+              <h4 className="text-lg font-semibold mt-4">2. Employer Sponsored Work Permits</h4>
               <p>
                 If you receive a <strong>valid job offer from a Nunavut employer</strong>, you may be eligible for a temporary work permit:
               </p>
