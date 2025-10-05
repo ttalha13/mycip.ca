@@ -22,13 +22,29 @@ export default function NewPasswordReset() {
   useEffect(() => {
     // Check if we have recovery tokens in the URL
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
-    const type = hashParams.get('type') || searchParams.get('type');
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
+    const type = hashParams.get('type') || urlParams.get('type');
+    const error = hashParams.get('error') || urlParams.get('error');
+    const errorDescription = hashParams.get('error_description') || urlParams.get('error_description');
 
-    console.log('URL check:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    console.log('URL check:', { 
+      accessToken: !!accessToken, 
+      refreshToken: !!refreshToken, 
+      type, 
+      error,
+      errorDescription,
+      hash: window.location.hash,
+      search: window.location.search
+    });
 
-    if (accessToken && refreshToken && type === 'recovery') {
+    if (error) {
+      console.error('Auth error in URL:', error, errorDescription);
+      setError(errorDescription || error);
+      setStep('email');
+    } else if (accessToken && refreshToken && type === 'recovery') {
       console.log('Recovery tokens found, processing...');
       processRecoveryTokens(accessToken, refreshToken);
     } else {

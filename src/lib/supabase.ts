@@ -68,7 +68,8 @@ try {
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
     from: () => ({
-      select: () => ({
+      storageKey: 'mycip.auth.token',
+      redirectTo: import.meta.env.DEV ? 'http://localhost:3000/new-password-reset' : 'https://mycip.ca/new-password-reset'
         order: () => ({
           limit: () => Promise.reject(new Error(supabaseError || 'Supabase not available'))
         })
