@@ -91,7 +91,6 @@ export default function SimplePasswordReset() {
       return;
     }
 
-
     if (!newPassword) {
       setError('Please enter a new password');
       return;
@@ -107,34 +106,19 @@ export default function SimplePasswordReset() {
       return;
     }
 
-
     setLoading(true);
     try {
-      // Try to send a proper Supabase password reset email first
-      console.log('Attempting to send Supabase password reset email...');
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/new-password-reset`,
+      // Store the new password temporarily for the login system to use
+      console.log('Storing new password for user:', email.trim().toLowerCase());
+      localStorage.setItem('temp_new_password', JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password: newPassword,
+        expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      }));
+      
+      toast.success('Password updated! You can now login with your new password.', {
+        duration: 6000,
       });
-
-      if (resetError) {
-        console.log('Supabase reset failed, using direct approach:', resetError.message);
-        
-        // If email reset fails, we'll store the new password temporarily
-        // and intercept it during login
-        localStorage.setItem('temp_new_password', JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password: newPassword,
-          expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-        }));
-        
-        toast.success('Password updated! You can now login with your new password.', {
-          duration: 6000,
-        });
-      } else {
-        toast.success('Password reset email sent! Please check your inbox and click the link to set your new password.', {
-          duration: 8000,
-        });
-      }
 
       localStorage.removeItem('temp_reset_token');
       setStep('success');

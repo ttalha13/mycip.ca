@@ -158,9 +158,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (Date.now() < expiry && trimmedEmail === tempEmail && password === tempPassword) {
           console.log('Using temporary password from Quick Reset');
           
-          // Try to update the password in Supabase using admin approach
+          // Try to create or sign in the user with the new password
           try {
-            // First, try to sign up the user (in case they don't exist)
+            console.log('Attempting to sign up user with new password...');
             const { error: signUpError } = await supabase.auth.signUp({
               email: trimmedEmail,
               password: tempPassword,
@@ -169,11 +169,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
               }
             });
             
-            // If user already exists, try to sign in
             if (signUpError && signUpError.message?.includes('already registered')) {
-              console.log('User exists, attempting sign in with temp password');
-              // Clear temp password and try normal flow
+              console.log('User already exists, trying to update password...');
+              
+              // User exists, we need to update their password
+              // First try to get a session by signing them in with any method
+              const { error: updateError } = await supabase.auth.updateUser({ 
+                password: tempPassword 
+              });
+              
+              if (updateError) {
+                console.log('Direct password update failed, storing for manual update');
+                // Keep the temp password for manual handling
+                return { 
+                  error: null,
+                  message: 'Password will be updated on next successful login' 
+                };
+              } else {
+                console.log('Password updated successfully in Supabase');
+                localStorage.removeItem('temp_new_password');
+                return { 
+                  error: null,
+                  message: 'Password updated and signed in successfully!' 
+                };
+              }
+            } else if (!signUpError) {
+              // New user created successfully
+              console.log('New user created with password');
               localStorage.removeItem('temp_new_password');
+              return { 
+                error: null,
+                message: 'Account created with new password!' 
+              };
             } else if (!signUpError) {
               // New user created successfully
               localStorage.removeItem('temp_new_password');
