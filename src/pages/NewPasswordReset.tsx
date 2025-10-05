@@ -10,7 +10,7 @@ export default function NewPasswordReset() {
   const { theme } = useTheme();
   const [searchParams] = useSearchParams();
   
-  const [step, setStep] = useState<'verify' | 'reset' | 'success'>('verify');
+  const [step, setStep] = useState<'email' | 'reset' | 'success'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,18 +26,21 @@ export default function NewPasswordReset() {
     const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
     const type = hashParams.get('type') || searchParams.get('type');
 
+    console.log('URL check:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+
     if (accessToken && refreshToken && type === 'recovery') {
-      // We have recovery tokens, process them
+      console.log('Recovery tokens found, processing...');
       processRecoveryTokens(accessToken, refreshToken);
     } else {
-      // No tokens, start with email verification
-      setStep('verify');
+      console.log('No recovery tokens, showing email form');
+      setStep('email');
     }
   }, [searchParams]);
 
   const processRecoveryTokens = async (accessToken: string, refreshToken: string) => {
     setLoading(true);
     try {
+      console.log('Setting recovery session...');
       const { data, error } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
@@ -45,8 +48,8 @@ export default function NewPasswordReset() {
 
       if (error) {
         console.error('Error setting recovery session:', error);
-        setError('Invalid or expired reset link. Please try again.');
-        setStep('verify');
+        setError('Invalid or expired reset link. Please request a new one.');
+        setStep('email');
       } else if (data.user) {
         console.log('Recovery session established for:', data.user.email);
         setEmail(data.user.email || '');
@@ -56,8 +59,8 @@ export default function NewPasswordReset() {
       }
     } catch (error) {
       console.error('Error processing recovery tokens:', error);
-      setError('Invalid or expired reset link. Please try again.');
-      setStep('verify');
+      setError('Invalid or expired reset link. Please request a new one.');
+      setStep('email');
     } finally {
       setLoading(false);
     }
@@ -80,23 +83,27 @@ export default function NewPasswordReset() {
 
     setLoading(true);
     try {
+      console.log('Sending password reset email to:', email.trim());
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: `${window.location.origin}/new-password-reset`,
       });
 
       if (error) {
+        console.error('Password reset error:', error);
         if (error.message.includes('For security purposes')) {
           setError('Please wait before requesting another password reset email.');
         } else {
           setError(error.message || 'Failed to send password reset email');
         }
       } else {
+        console.log('Password reset email sent successfully');
         toast.success('Password reset email sent! Please check your inbox and click the link.', {
-          duration: 5000,
+          duration: 8000,
         });
+        // Don't change step, let user click the email link
       }
     } catch (error: any) {
-      console.error('Password reset error:', error);
+      console.error('Password reset exception:', error);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -124,6 +131,7 @@ export default function NewPasswordReset() {
 
     setLoading(true);
     try {
+      console.log('Updating password...');
       const { error } = await supabase.auth.updateUser({ 
         password: password 
       });
@@ -132,11 +140,12 @@ export default function NewPasswordReset() {
         console.error('Update password error:', error);
         setError(error.message || 'Failed to update password');
       } else {
+        console.log('Password updated successfully');
         setStep('success');
-        // Auto redirect after 3 seconds
+        // Auto redirect after 5 seconds
         setTimeout(() => {
           navigate('/login');
-        }, 3000);
+        }, 5000);
       }
     } catch (error: any) {
       console.error('Error updating password:', error);
@@ -146,7 +155,7 @@ export default function NewPasswordReset() {
     }
   };
 
-  const renderVerifyStep = () => (
+  const renderEmailStep = () => (
     <div className="space-y-6">
       <div className="text-center">
         <Mail className={`h-12 w-12 mx-auto mb-4 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
@@ -204,6 +213,18 @@ export default function NewPasswordReset() {
           )}
         </button>
       </form>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Remember your password?{' '}
+          <button
+            onClick={() => navigate('/login')}
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+          >
+            Sign in instead
+          </button>
+        </p>
+      </div>
     </div>
   );
 
@@ -324,10 +345,10 @@ export default function NewPasswordReset() {
         </p>
         <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
           <p className="text-green-700 dark:text-green-300 font-medium">
-            "Success is not final, failure is not fatal: it is the courage to continue that counts."
+            "The only impossible journey is the one you never begin."
           </p>
           <p className="text-green-600 dark:text-green-400 text-sm mt-2">
-            - Winston Churchill
+            - Tony Robbins
           </p>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -343,7 +364,7 @@ export default function NewPasswordReset() {
     </div>
   );
 
-  if (loading && step === 'verify') {
+  if (loading && step === 'email') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -360,7 +381,7 @@ export default function NewPasswordReset() {
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          {step === 'verify' && renderVerifyStep()}
+          {step === 'email' && renderEmailStep()}
           {step === 'reset' && renderResetStep()}
           {step === 'success' && renderSuccessStep()}
         </div>
