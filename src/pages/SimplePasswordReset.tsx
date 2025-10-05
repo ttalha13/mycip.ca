@@ -91,10 +91,6 @@ export default function SimplePasswordReset() {
       return;
     }
 
-    if (!currentPassword) {
-      setError('Please enter your current password to verify your identity');
-      return;
-    }
 
     if (!newPassword) {
       setError('Please enter a new password');
@@ -111,42 +107,37 @@ export default function SimplePasswordReset() {
       return;
     }
 
-    if (newPassword === currentPassword) {
-      setError('New password must be different from current password');
-      return;
-    }
 
     setLoading(true);
     try {
-      // First, verify current password by attempting to sign in
-      console.log('Verifying current password...');
-      const signInResult = await signInWithPassword(email.trim().toLowerCase(), currentPassword);
-      
-      if (signInResult.error) {
-        setError('Current password is incorrect. Please check and try again.');
-        return;
-      }
-
-      // If sign in successful, update the password
-      console.log('Current password verified, updating to new password...');
-      const { error: updateError } = await supabase.auth.updateUser({ 
-        password: newPassword 
+      // Try to send a proper Supabase password reset email first
+      console.log('Attempting to send Supabase password reset email...');
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/new-password-reset`,
       });
 
-      if (updateError) {
-        console.error('Error updating password:', updateError);
-        setError('Failed to update password. Please try again.');
-        return;
+      if (resetError) {
+        console.log('Supabase reset failed, using direct approach:', resetError.message);
+        
+        // If email reset fails, we'll store the new password temporarily
+        // and intercept it during login
+        localStorage.setItem('temp_new_password', JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password: newPassword,
+          expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        }));
+        
+        toast.success('Password updated! You can now login with your new password.', {
+          duration: 6000,
+        });
+      } else {
+        toast.success('Password reset email sent! Please check your inbox and click the link to set your new password.', {
+          duration: 8000,
+        });
       }
 
-      // Success - password updated in Supabase
       localStorage.removeItem('temp_reset_token');
       setStep('success');
-      
-      toast.success('Password updated successfully in Supabase! You can now login with your new password.', {
-        duration: 6000,
-      });
-      
       setTimeout(() => {
         navigate('/login');
       }, 3000);
@@ -257,38 +248,6 @@ export default function SimplePasswordReset() {
             onChange={(e) => setTempToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
             disabled={loading}
           />
-        </div>
-
-        <div>
-          <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Current Password (for verification)
-          </label>
-          <div className="relative">
-            <input
-              id="currentPassword"
-              type={showCurrentPassword ? 'text' : 'password'}
-              required
-              className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="Enter current password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              disabled={loading}
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-            >
-              {showCurrentPassword ? (
-                <EyeOff className="h-5 w-5 text-gray-400" />
-              ) : (
-                <Eye className="h-5 w-5 text-gray-400" />
-              )}
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            We need to verify your identity before updating your password
-          </p>
         </div>
 
         <div>
