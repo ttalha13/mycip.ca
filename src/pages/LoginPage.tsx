@@ -454,26 +454,11 @@ export default function LoginPage() {
           {!isSignUp && (
             <div className="mt-4 text-center">
               <button
-                onClick={() => navigate('/new-password-reset')}
+                onClick={() => navigate('/simple-password-reset')}
                 className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
               >
-                Forgot your password?
+                Quick Reset: No email required
               </button>
-              <div className="mt-2">
-                <button
-                  onClick={() => navigate('/direct-password-reset')}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline"
-                >
-                  Alternative: Reset with current password
-                </button>
-                <br />
-                <button
-                  onClick={() => navigate('/simple-password-reset')}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline"
-                >
-                  Quick Reset: No email required
-                </button>
-              </div>
             </div>
           )}
 
