@@ -159,24 +159,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
             Date.now() - timestamp < 24 * 60 * 60 * 1000 && 
             password === newPassword) {
           
-          // Clear the temp password
-          localStorage.removeItem('temp_new_password');
-          
-          // For demo purposes, we'll simulate a successful sign in with the new password
-          // In a real app, you'd need to handle this server-side
           if (import.meta.env.DEV) {
-            console.log('Using temporary new password for sign in');
+            console.log('Found temporary new password, attempting to update in Supabase');
           }
           
-          // Simulate successful authentication
-          // Note: This is a demo implementation - in production you'd handle password updates server-side
-          return { 
-            error: null,
-            message: 'Successfully signed in with new password!' 
-          };
+          // Try to sign in with any existing password first to get a session
+          // This is a workaround - in production you'd handle this server-side
+          try {
+            // First, try to get the user by email and update their password
+            // We'll use the admin approach by trying to sign in with a recovery session
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+              redirectTo: `${window.location.origin}/auth/callback`,
+            });
+            
+            if (!resetError) {
+              // Clear the temp password since we've initiated the proper reset
+              localStorage.removeItem('temp_new_password');
+              
+              return {
+                error: new Error('Please check your email for a password reset link to complete the process.'),
+                message: 'Password reset initiated'
+              };
+            }
+          } catch (resetError) {
+            console.error('Error initiating password reset:', resetError);
+          }
+          
+          // If reset fails, clear temp password and proceed with normal login
+          localStorage.removeItem('temp_new_password');
         }
       } catch (error) {
         console.error('Error processing temp password:', error);
+        localStorage.removeItem('temp_new_password');
       }
     }
 

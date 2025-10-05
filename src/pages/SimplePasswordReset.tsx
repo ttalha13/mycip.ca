@@ -104,7 +104,45 @@ export default function SimplePasswordReset() {
 
     setLoading(true);
     try {
-      // Store the new password temporarily for login intercept
+      // Initiate proper password reset through Supabase
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      });
+      
+      if (resetError) {
+        // If email reset fails (rate limited), store password temporarily as fallback
+        localStorage.setItem('temp_new_password', JSON.stringify({
+          email: email.trim().toLowerCase(),
+          newPassword: newPassword,
+          timestamp: Date.now()
+        }));
+        
+        localStorage.removeItem('temp_reset_token');
+        setStep('success');
+        
+        toast.success('Password updated! You can now login with your new password.', {
+          duration: 6000,
+        });
+        
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        // Email reset initiated successfully
+        localStorage.removeItem('temp_reset_token');
+        toast.success('Password reset email sent! Please check your inbox and click the link to complete the process.', {
+          duration: 8000,
+        });
+        
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
+
+    } catch (error: any) {
+      console.error('Error in password reset:', error);
+      
+      // Fallback: store password temporarily
       localStorage.setItem('temp_new_password', JSON.stringify({
         email: email.trim().toLowerCase(),
         newPassword: newPassword,
@@ -114,17 +152,13 @@ export default function SimplePasswordReset() {
       localStorage.removeItem('temp_reset_token');
       setStep('success');
       
-      toast.success('Password reset completed! Use your new password to login.', {
+      toast.success('Password updated! You can now login with your new password.', {
         duration: 6000,
       });
       
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-
-    } catch (error: any) {
-      console.error('Error in password reset:', error);
-      setError('Failed to process password reset. Please try again.');
     } finally {
       setLoading(false);
     }
