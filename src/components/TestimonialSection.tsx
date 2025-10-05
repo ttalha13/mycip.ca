@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight, Send, User, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
+import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
 
 interface Testimonial {
   id: string;
@@ -81,20 +79,12 @@ const BUILT_IN_TESTIMONIALS: Testimonial[] = [
 
 export default function TestimonialSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [submittingReview, setSubmittingReview] = useState(false);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reviewForm, setReviewForm] = useState({
-    rating: 5,
-    comment: '',
-    immigration_status: ''
-  });
   const containerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
 
   const getAvatarColor = (name: string): string => {
     const colors = [
@@ -167,83 +157,6 @@ export default function TestimonialSection() {
     setCurrentIndex(index);
   }, [currentIndex, testimonials.length]);
 
-  const handleReviewSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      toast.error('Please sign in to submit a review');
-      return;
-    }
-
-    if (!reviewForm.comment.trim()) {
-      toast.error('Please write a comment');
-      return;
-    }
-
-    if (reviewForm.comment.length < 10) {
-      toast.error('Comment must be at least 10 characters long');
-      return;
-    }
-
-    if (!reviewForm.immigration_status.trim()) {
-      toast.error('Please select your immigration status');
-      return;
-    }
-
-    setSubmittingReview(true);
-
-    try {
-      console.log('Submitting review:', {
-        user_name: user.email?.split('@')[0] || 'Anonymous User',
-        rating: reviewForm.rating,
-        comment: reviewForm.comment.trim(),
-        immigration_status: reviewForm.immigration_status
-      });
-
-      const { error } = await supabase
-        .from('testimonials')
-        .insert([
-          {
-            user_name: user.email?.split('@')[0] || 'Anonymous User',
-            rating: reviewForm.rating,
-            comment: reviewForm.comment.trim(),
-            immigration_status: reviewForm.immigration_status
-          }
-        ]);
-
-      if (error) {
-        console.error('Supabase insert error:', error);
-        throw error;
-      }
-
-      console.log('Review submitted successfully');
-
-      toast.success('Thank you for sharing your story! Your review has been submitted.', {
-        duration: 4000,
-        icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-      });
-
-      // Reset form
-      setReviewForm({
-        rating: 5,
-        comment: '',
-        immigration_status: ''
-      });
-      setShowReviewForm(false);
-
-      // Refresh testimonials to show the new one
-      console.log('Refreshing testimonials...');
-      await fetchTestimonials();
-      console.log('Testimonials refreshed');
-
-    } catch (error: any) {
-      console.error('Error submitting review:', error);
-      toast.error(`Failed to submit review: ${error.message || 'Please try again.'}`);
-    } finally {
-      setSubmittingReview(false);
-    }
-  }, [user, reviewForm, fetchTestimonials]);
-
   const stats = [
     { icon: Users, value: `${testimonials.length}+`, label: 'Success Stories', color: 'text-red-500' },
     { icon: TrendingUp, value: '98.5%', label: 'Success Rate', color: 'text-green-500' },
@@ -295,18 +208,6 @@ export default function TestimonialSection() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const renderStarRating = (rating: number, onRatingChange?: (rating: number) => void) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-6 w-6 transition-colors duration-200 cursor-pointer ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'
-        } ${onRatingChange ? 'hover:text-yellow-400' : ''}`}
-        onClick={() => onRatingChange && onRatingChange(i + 1)}
-      />
-    ));
   };
 
   // Show loading state
@@ -475,148 +376,24 @@ export default function TestimonialSection() {
 
         {/* Call to Action */}
         <div className="mt-20">
-          {/* Submit Your Review Section */}
-          <div className="mb-16">
-            <div className="text-center mb-8">
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-                Share Your Success Story
-              </h3>
-              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Help others by sharing your Canadian immigration journey and experience
-              </p>
-            </div>
-
-            {!showReviewForm ? (
-              <div className="text-center">
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 rounded-2xl p-1">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12">
+                <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
+                  Ready to Write Your Success Story?
+                </h3>
+                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+                  Join thousands of successful immigrants who found their path through MyCIP
+                </p>
                 <button
-                  onClick={() => setShowReviewForm(true)}
-                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="bg-gradient-to-r from-red-500 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-red-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
-                  Submit Your Review
+                  Start Your Journey Today
                 </button>
               </div>
-            ) : (
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700">
-                  <form onSubmit={handleReviewSubmit} className="space-y-6">
-                    {/* Rating */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                        <Star className="inline-block w-4 h-4 mr-2 mb-1" />
-                        Your Rating
-                      </label>
-                      <div className="flex items-center space-x-1">
-                        {renderStarRating(reviewForm.rating, (rating) => 
-                          setReviewForm({ ...reviewForm, rating })
-                        )}
-                        <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
-                          ({reviewForm.rating} star{reviewForm.rating !== 1 ? 's' : ''})
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Immigration Status */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <User className="inline-block w-4 h-4 mr-2 mb-1" />
-                        Your Immigration Status
-                      </label>
-                      <select
-                        required
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
-                        value={reviewForm.immigration_status}
-                        onChange={(e) => setReviewForm({ ...reviewForm, immigration_status: e.target.value })}
-                        disabled={submittingReview}
-                      >
-                        <option value="">Select your status</option>
-                        <option value="Permanent Resident">Permanent Resident</option>
-                        <option value="Express Entry ITA">Express Entry ITA</option>
-                        <option value="PNP Nominee">PNP Nominee</option>
-                        <option value="Quebec Resident">Quebec Resident</option>
-                        <option value="Work Permit Holder">Work Permit Holder</option>
-                        <option value="Study Permit Holder">Study Permit Holder</option>
-                        <option value="In Process">Application In Process</option>
-                        <option value="Exploring Options">Exploring Options</option>
-                      </select>
-                    </div>
-
-                    {/* Comment */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        <MessageSquare className="inline-block w-4 h-4 mr-2 mb-1" />
-                        Your Story
-                      </label>
-                      <textarea
-                        rows={4}
-                        required
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                        placeholder="Share your experience with MyCIP and your immigration journey..."
-                        disabled={submittingReview}
-                        maxLength={1000}
-                      />
-                      <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {reviewForm.comment.length}/1000 characters
-                      </div>
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex space-x-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowReviewForm(false);
-                          setReviewForm({ rating: 5, comment: '', immigration_status: '' });
-                        }}
-                        disabled={submittingReview}
-                        className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={submittingReview}
-                        className="flex-1 flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {submittingReview ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-5 h-5 mr-2" />
-                            Submit Review
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Existing Call to Action */}
-          <div className="text-center">
-          <div className="bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 rounded-2xl p-1">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 md:p-12">
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
-                Ready to Write Your Success Story?
-              </h3>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-                Join thousands of successful immigrants who found their path through MyCIP
-              </p>
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="bg-gradient-to-r from-red-500 to-blue-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-red-600 hover:to-blue-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-              >
-                Start Your Journey Today
-              </button>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </section>
