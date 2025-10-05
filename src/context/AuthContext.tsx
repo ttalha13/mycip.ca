@@ -45,6 +45,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               error.message?.includes('Refresh Token Not Found')) {
             console.log('Clearing stale session due to invalid refresh token');
             await supabase.auth.signOut();
+            localStorage.removeItem('mycip.auth.token');
             setUser(null);
             return;
           }
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Clear any stale session data on general exceptions
         try {
           await supabase.auth.signOut();
+          localStorage.removeItem('mycip.auth.token');
         } catch (signOutError) {
           console.error('Error signing out during cleanup:', signOutError);
         }
@@ -300,6 +302,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error('Sign out error:', error);
         }
       }
+      localStorage.removeItem('mycip.auth.token');
       if (import.meta.env.DEV) {
         console.log('Sign out successful');
       }
