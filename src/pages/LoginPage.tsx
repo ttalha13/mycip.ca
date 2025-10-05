@@ -457,10 +457,16 @@ export default function LoginPage() {
           {!isSignUp && (
             <div className="mt-4 text-center">
               <button
-                onClick={() => navigate('/simple-password-reset')}
-                className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                onClick={() => setIsForgotPassword(true)}
+                className="text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 mr-4"
               >
-                Quick Reset: No email required
+                Forgot Password?
+              </button>
+              <button
+                onClick={() => navigate('/simple-password-reset')}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+              >
+                Quick Reset (Demo)
               </button>
             </div>
           )}

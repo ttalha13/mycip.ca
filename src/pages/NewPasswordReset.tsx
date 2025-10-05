@@ -18,6 +18,7 @@ export default function NewPasswordReset() {
     // Check if we have a valid recovery session
     const checkSession = async () => {
       try {
+        console.log('Checking recovery session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -26,9 +27,13 @@ export default function NewPasswordReset() {
           return;
         }
 
-        if (session) {
+        console.log('Session data:', session);
+        
+        if (session && session.user) {
+          console.log('Valid recovery session found for:', session.user.email);
           setIsValidSession(true);
         } else {
+          console.log('No valid session found');
           setError('Invalid or expired reset link. Please request a new password reset.');
         }
       } catch (error) {
