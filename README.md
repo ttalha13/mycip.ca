@@ -1,12 +1,12 @@
 # MyCIP - Canadian Immigration Pathways
 
-Your trusted companion for navigating Canadian immigration pathways. Get expert guidance on PR applications, provincial programs, and immigration updates.
+Your trusted companion for navigating Canadian immigration pathways. Get expert guidance on PR applications, provincial programs, Calculate CRS Score and immigration updates.
 
 ## 🚀 Features
 
-- **Comprehensive Province Guide** - Detailed information for all 13 Canadian provinces and territories
+- **Comprehensive Province Guide** - Detailed information for all 13 Canadian provinces and territories.
 - **Real-time Immigration Updates** - Latest policy changes and program updates
-- **CRS Score Calculator** - Direct link to official government calculator
+- **CRS Score Calculator** - Direct link to official government calculator.
 - **Success Stories** - Real testimonials from successful immigrants
 - **Expert Contact System** - WhatsApp integration for direct consultation
 - **Hybrid Authentication** - Supports both Supabase and local storage users
@@ -21,14 +21,13 @@ Your trusted companion for navigating Canadian immigration pathways. Get expert 
 - **Routing**: React Router v6 with future flags
 - **Icons**: Lucide React
 - **Notifications**: React Hot Toast
-- **Deployment**: Netlify with custom domain
+- **Deployment**: Netlify with custom domain (godaddy)
 
 ## 🏗️ Architecture
 
 ### Authentication System
 - **Hybrid Approach**: Tries Supabase first, falls back to local storage
-- **User Preservation**: Maintains all existing Supabase users
-- **Instant Signup**: New users can register without email verification
+- **User Preservation**: Maintains all existing Supabase users.
 - **Password Reset**: Works for both Supabase and local users
 
 ### Database Schema
@@ -37,29 +36,7 @@ Your trusted companion for navigating Canadian immigration pathways. Get expert 
 - **Testimonials**: User success stories and ratings
 - **Activity Logging**: User interaction tracking
 
-## 🚀 Quick Start
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/mycip.git
-   cd mycip
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Add your Supabase credentials
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
 
 ## 🌐 Environment Variables
 
@@ -71,7 +48,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ## 📱 Contact Integration
 
 The contact form integrates with WhatsApp for instant communication:
-- **WhatsApp Number**: +1 (705) 970-2705
 - **Auto-formatted Messages**: All form data is pre-formatted
 - **Fallback System**: Instagram contact if WhatsApp fails
 
@@ -130,17 +106,6 @@ src/
 - **Meta Tags**: Comprehensive social media optimization
 - **Sitemap**: Auto-generated XML sitemap
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👨‍💻 Author
 
@@ -148,7 +113,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Instagram: [@ttalha_13](https://www.instagram.com/ttalha_13/)
 - LinkedIn: [Talha](https://www.linkedin.com/in/talha-806869188/)
 - Twitter: [@abu4323](https://x.com/abu4323)
-- YouTube: [@ttalha.13](https://www.youtube.com/@ttalha.13)
+
 
 ## 🙏 Acknowledgments
 
