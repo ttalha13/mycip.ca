@@ -47,10 +47,9 @@ export default function AuthCallback() {
           console.log('✅ Session established for:', data.session.user.email);
           
           // Check if this is a recovery session (password reset)
-          const urlType = searchParams.get('type');
           if (type === 'recovery') {
             console.log('🔐 Recovery session detected, redirecting to reset password');
-            navigate('/new-password-reset');
+            navigate('/reset-password');
             return;
           }
           
@@ -74,7 +73,7 @@ export default function AuthCallback() {
               console.log('✅ Session set successfully');
               if (type === 'recovery') {
                 console.log('🔐 Recovery type detected, going to password reset');
-                navigate('/new-password-reset');
+                navigate('/reset-password');
                 return;
               }
               setSuccess(true);
