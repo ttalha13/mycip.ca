@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Testimonial {
