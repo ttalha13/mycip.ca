@@ -5,12 +5,18 @@
   "icons": [
     {
       "src": "/mycip.png",
-      "sizes": "192x192",
+      "sizes": "192x192 512x512",
       "type": "image/png"
     },
     {
       "src": "/mycip.png",
-      "sizes": "512x512",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/mycip.png",
+      "sizes": "144x144",
       "type": "image/png"
     }
   ],
