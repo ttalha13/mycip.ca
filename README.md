@@ -1,3 +1,16 @@
+![MyCIP login page](loginPage.png)
+
+
+
+
+![MyCIP HomePage Screenshot](homePage.png)
+
+
+
+
+
+
+
 🇨🇦MyCIP: CANADIAN IMMIGRATION PATHWAYS cd ~ https://mycip.ca
 
 Your trusted companion for navigating Canadian immigration pathways. Get expert guidance on PR applications, provincial programs, Calculate CRS Score and immigration updates, all under one space.
