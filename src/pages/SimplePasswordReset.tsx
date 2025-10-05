@@ -240,6 +240,9 @@ export default function SimplePasswordReset() {
           <input
             id="tempToken"
             type="text"
+            name="reset-token"
+            autoComplete="off"
+            data-form-type="other"
             required
             maxLength={6}
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-2xl font-mono"
@@ -257,6 +260,8 @@ export default function SimplePasswordReset() {
           <div className="relative">
             <input
               id="newPassword"
+              name="new-password"
+              autoComplete="new-password"
               type={showNewPassword ? 'text' : 'password'}
               required
               className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -290,6 +295,8 @@ export default function SimplePasswordReset() {
           <div className="relative">
             <input
               id="confirmPassword"
+              name="confirm-password"
+              autoComplete="new-password"
               type={showConfirmPassword ? 'text' : 'password'}
               required
               className="w-full pr-10 pl-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
