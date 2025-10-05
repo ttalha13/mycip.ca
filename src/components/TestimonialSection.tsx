@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight, Send, User, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
-import { gsap } from 'gsap';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -16,9 +15,72 @@ interface Testimonial {
   country: string;
 }
 
+// Move built-in testimonials outside component to prevent recreation on every render
+const BUILT_IN_TESTIMONIALS: Testimonial[] = [
+  {
+    id: '1',
+    user_name: 'Sarah Chen',
+    rating: 5,
+    comment: 'MyCIP transformed my immigration journey completely! The detailed province guides helped me choose Alberta PNP, and I received my nomination within 4 months. The step-by-step guidance was invaluable.',
+    immigration_status: 'Permanent Resident',
+    created_at: '2024-01-15T10:00:00Z',
+    avatar_color: 'from-pink-400 to-purple-600',
+    country: 'China'
+  },
+  {
+    id: '2',
+    user_name: 'Rajesh Patel',
+    rating: 4,
+    comment: 'The CRS calculator and Express Entry guidance on MyCIP helped me understand exactly what I needed to improve. Increased my score from 420 to 485 and got my ITA! Couldn\'t have done it without this platform.',
+    immigration_status: 'Express Entry ITA',
+    created_at: '2024-01-20T14:30:00Z',
+    avatar_color: 'from-blue-400 to-cyan-600',
+    country: 'India'
+  },
+  {
+    id: '3',
+    user_name: 'Lakhwinder Singh',
+    rating: 5,
+    comment: 'As a healthcare professional, MyCIP\'s detailed information about provincial healthcare programs was exactly what I needed. Successfully immigrated to Nova Scotia through their healthcare stream!',
+    immigration_status: 'PNP Nominee',
+    created_at: '2024-02-01T09:15:00Z',
+    avatar_color: 'from-green-400 to-emerald-600',
+    country: 'India'
+  },
+  {
+    id: '4',
+    user_name: 'Navseerat Kaur',
+    rating: 5,
+    comment: 'The comprehensive pathway information saved me months of research. MyCIP\'s updates on immigration draws helped me time my application perfectly. Now proudly living in Toronto!',
+    immigration_status: 'Permanent Resident',
+    created_at: '2024-02-10T16:45:00Z',
+    avatar_color: 'from-orange-400 to-red-600',
+    country: 'India'
+  },
+  {
+    id: '5',
+    user_name: 'Simarjit Singh',
+    rating: 5,
+    comment: 'MyCIP\'s detailed breakdown of Quebec immigration programs helped me navigate the unique requirements. The French language preparation tips were spot-on. Merci beaucoup!',
+    immigration_status: 'Quebec Resident',
+    created_at: '2024-02-15T11:30:00Z',
+    avatar_color: 'from-purple-400 to-indigo-600',
+    country: 'India'
+  },
+  {
+    id: '6',
+    user_name: 'Farneet Singh Longia',
+    rating: 5,
+    comment: 'The platform\'s real-time updates and expert insights made all the difference. From international student to PR in 18 months - MyCIP guided every step of my journey!',
+    immigration_status: 'Permanent Resident',
+    created_at: '2024-02-20T16:20:00Z',
+    avatar_color: 'from-teal-400 to-blue-600',
+    country: 'India'
+  }
+];
+
 export default function TestimonialSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -30,74 +92,9 @@ export default function TestimonialSection() {
     immigration_status: ''
   });
   const containerRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const statsRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-
-  // Built-in testimonials data
-  const builtInTestimonials: Testimonial[] = [
-    {
-      id: '1',
-      user_name: 'Sarah Chen',
-      rating: 5,
-      comment: 'MyCIP transformed my immigration journey completely! The detailed province guides helped me choose Alberta PNP, and I received my nomination within 4 months. The step-by-step guidance was invaluable.',
-      immigration_status: 'Permanent Resident',
-      created_at: '2024-01-15T10:00:00Z',
-      avatar_color: 'from-pink-400 to-purple-600',
-      country: 'China'
-    },
-    {
-      id: '2',
-      user_name: 'Rajesh Patel',
-      rating: 4,
-      comment: 'The CRS calculator and Express Entry guidance on MyCIP helped me understand exactly what I needed to improve. Increased my score from 420 to 485 and got my ITA! Couldn\'t have done it without this platform.',
-      immigration_status: 'Express Entry ITA',
-      created_at: '2024-01-20T14:30:00Z',
-      avatar_color: 'from-blue-400 to-cyan-600',
-      country: 'India'
-    },
-    {
-      id: '3',
-      user_name: 'Lakhwinder Singh',
-      rating: 5,
-      comment: 'As a healthcare professional, MyCIP\'s detailed information about provincial healthcare programs was exactly what I needed. Successfully immigrated to Nova Scotia through their healthcare stream!',
-      immigration_status: 'PNP Nominee',
-      created_at: '2024-02-01T09:15:00Z',
-      avatar_color: 'from-green-400 to-emerald-600',
-      country: 'India'
-    },
-    {
-      id: '4',
-      user_name: 'Navseerat Kaur',
-      rating: 5,
-      comment: 'The comprehensive pathway information saved me months of research. MyCIP\'s updates on immigration draws helped me time my application perfectly. Now proudly living in Toronto!',
-      immigration_status: 'Permanent Resident',
-      created_at: '2024-02-10T16:45:00Z',
-      avatar_color: 'from-orange-400 to-red-600',
-      country: 'India'
-    },
-    {
-      id: '5',
-      user_name: 'Simarjit Singh',
-      rating: 5,
-      comment: 'MyCIP\'s detailed breakdown of Quebec immigration programs helped me navigate the unique requirements. The French language preparation tips were spot-on. Merci beaucoup!',
-      immigration_status: 'Quebec Resident',
-      created_at: '2024-02-15T11:30:00Z',
-      avatar_color: 'from-purple-400 to-indigo-600',
-      country: 'India'
-    },
-    {
-      id: '6',
-      user_name: 'Farneet Singh Longia',
-      rating: 5,
-      comment: 'The platform\'s real-time updates and expert insights made all the difference. From international student to PR in 18 months - MyCIP guided every step of my journey!',
-      immigration_status: 'Permanent Resident',
-      created_at: '2024-02-20T16:20:00Z',
-      avatar_color: 'from-teal-400 to-blue-600',
-      country: 'India'
-    }
-  ];
 
   const getAvatarColor = (name: string): string => {
     const colors = [
@@ -119,6 +116,8 @@ export default function TestimonialSection() {
       setLoading(true);
       setError(null);
       
+      let allTestimonials = [...BUILT_IN_TESTIMONIALS];
+
       const { data, error: fetchError } = await supabase
         .from('testimonials')
         .select('*')
@@ -130,8 +129,6 @@ export default function TestimonialSection() {
         throw fetchError;
       }
 
-      let allTestimonials = [...builtInTestimonials];
-
       if (data && data.length > 0) {
         const formattedTestimonials = data.map(testimonial => ({
           ...testimonial,
@@ -139,7 +136,7 @@ export default function TestimonialSection() {
           country: 'Canada' // Default country since we don't store this
         }));
         // Add user testimonials after built-in ones
-        allTestimonials = [...builtInTestimonials, ...formattedTestimonials];
+        allTestimonials = [...BUILT_IN_TESTIMONIALS, ...formattedTestimonials];
       }
 
       setTestimonials(allTestimonials);
@@ -147,78 +144,28 @@ export default function TestimonialSection() {
       console.error('Error in fetchTestimonials:', error);
       setError('Failed to load testimonials');
       // Use built-in testimonials on error
-      setTestimonials(builtInTestimonials);
+      setTestimonials(BUILT_IN_TESTIMONIALS);
     } finally {
       setLoading(false);
     }
-  }, [builtInTestimonials]);
-
-  const animateTransition = useCallback((newIndex: number) => {
-    const currentCard = cardRefs.current[currentIndex];
-    const nextCard = cardRefs.current[newIndex];
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setCurrentIndex(newIndex);
-        setIsAnimating(false);
-      }
-    });
-
-    // Animate out current card
-    if (currentCard) {
-      tl.to(currentCard, {
-        rotationY: newIndex > currentIndex ? -90 : 90,
-        opacity: 0,
-        scale: 0.8,
-        z: -100,
-        duration: 0.4,
-        ease: "power2.in"
-      });
-    }
-
-    // Animate in next card
-    if (nextCard) {
-      tl.fromTo(nextCard, 
-        {
-          rotationY: newIndex > currentIndex ? 90 : -90,
-          opacity: 0,
-          scale: 0.8,
-          z: -100
-        },
-        {
-          rotationY: 0,
-          opacity: 1,
-          scale: 1,
-          z: 0,
-          duration: 0.5,
-          ease: "power2.out"
-        },
-        "-=0.2"
-      );
-    }
-  }, [currentIndex]);
+  }, []);
 
   const nextTestimonial = useCallback(() => {
-    if (isAnimating || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    
+    if (testimonials.length <= 1) return;
     const nextIndex = (currentIndex + 1) % testimonials.length;
-    animateTransition(nextIndex);
-  }, [isAnimating, testimonials.length, currentIndex, animateTransition]);
+    setCurrentIndex(nextIndex);
+  }, [testimonials.length, currentIndex]);
 
   const prevTestimonial = useCallback(() => {
-    if (isAnimating || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    
+    if (testimonials.length <= 1) return;
     const prevIndex = currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1;
-    animateTransition(prevIndex);
-  }, [isAnimating, testimonials.length, currentIndex, animateTransition]);
+    setCurrentIndex(prevIndex);
+  }, [testimonials.length, currentIndex]);
 
   const goToTestimonial = useCallback((index: number) => {
-    if (isAnimating || index === currentIndex || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    animateTransition(index);
-  }, [isAnimating, currentIndex, testimonials.length, animateTransition]);
+    if (index === currentIndex || testimonials.length <= 1) return;
+    setCurrentIndex(index);
+  }, [currentIndex, testimonials.length]);
 
   const handleReviewSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,58 +254,18 @@ export default function TestimonialSection() {
   // Fetch testimonials on component mount
   useEffect(() => {
     fetchTestimonials();
-  }, [fetchTestimonials]);
-
-  // Initialize GSAP animations
-  useEffect(() => {
-    if (!containerRef.current || loading) return;
-
-    // Animate header on mount
-    gsap.fromTo(headerRef.current, 
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
-    );
-
-    // Animate stats
-    gsap.fromTo(statsRef.current?.children || [], 
-      { opacity: 0, y: 30, scale: 0.8 },
-      { 
-        opacity: 1, 
-        y: 0, 
-        scale: 1, 
-        duration: 0.8, 
-        stagger: 0.1, 
-        delay: 0.3,
-        ease: "back.out(1.7)" 
-      }
-    );
-
-    // Initial card setup
-    cardRefs.current.forEach((card, index) => {
-      if (card) {
-        gsap.set(card, {
-          rotationY: index === currentIndex ? 0 : index < currentIndex ? -90 : 90,
-          opacity: index === currentIndex ? 1 : 0,
-          scale: index === currentIndex ? 1 : 0.8,
-          z: index === currentIndex ? 0 : -100
-        });
-      }
-    });
-
-  }, [loading, currentIndex]);
+  }, []);
 
   // Auto-rotate testimonials
   useEffect(() => {
     if (loading || testimonials.length === 0) return;
     
     const interval = setInterval(() => {
-      if (!isAnimating) {
-        nextTestimonial();
-      }
+      nextTestimonial();
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [currentIndex, isAnimating, loading, testimonials.length, nextTestimonial]);
+  }, [loading, testimonials.length, nextTestimonial]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -445,23 +352,7 @@ export default function TestimonialSection() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="text-center group cursor-pointer"
-              onMouseEnter={() => {
-                gsap.to(statsRef.current?.children[index], {
-                  scale: 1.1,
-                  y: -5,
-                  duration: 0.3,
-                  ease: "power2.out"
-                });
-              }}
-              onMouseLeave={() => {
-                gsap.to(statsRef.current?.children[index], {
-                  scale: 1,
-                  y: 0,
-                  duration: 0.3,
-                  ease: "power2.out"
-                });
-              }}
+              className="text-center group cursor-pointer transform transition-all duration-300 hover:scale-110 hover:-translate-y-2"
             >
               <div className="flex justify-center mb-4">
                 <div className={`p-4 rounded-full bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-700 shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
@@ -482,15 +373,12 @@ export default function TestimonialSection() {
         <div className="relative">
           <div 
             ref={containerRef}
-            className="perspective-1000 min-h-[500px] flex items-center justify-center"
-            style={{ perspective: '1000px' }}
+            className="min-h-[500px] flex items-center justify-center"
           >
-            {testimonials.map((testimonial, index) => (
+            {testimonials.length > 0 && (
               <div
-                key={testimonial.id}
-                ref={el => cardRefs.current[index] = el}
-                className="absolute w-full max-w-4xl"
-                style={{ transformStyle: 'preserve-3d' }}
+                key={testimonials[currentIndex].id}
+                className="w-full max-w-4xl transition-all duration-500 ease-in-out"
               >
                 <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden">
                   {/* Background Pattern */}
@@ -506,37 +394,37 @@ export default function TestimonialSection() {
                   <div className="relative z-10">
                     {/* Avatar and Info */}
                     <div className="flex items-center mb-8">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${testimonial.avatar_color} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
-                        {getInitials(testimonial.user_name)}
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${testimonials[currentIndex].avatar_color} flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+                        {getInitials(testimonials[currentIndex].user_name)}
                       </div>
                       <div className="ml-4">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          {testimonial.user_name}
+                          {testimonials[currentIndex].user_name}
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                          From {testimonial.country}
+                          From {testimonials[currentIndex].country}
                         </p>
                       </div>
                       <div className="ml-auto">
-                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(testimonial.immigration_status)}`}>
-                          {testimonial.immigration_status}
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(testimonials[currentIndex].immigration_status)}`}>
+                          {testimonials[currentIndex].immigration_status}
                         </span>
                       </div>
                     </div>
 
                     {/* Rating */}
                     <div className="flex items-center justify-center mb-6">
-                      {renderStars(testimonial.rating)}
+                      {renderStars(testimonials[currentIndex].rating)}
                     </div>
 
                     {/* Testimonial Text */}
                     <blockquote className="text-xl md:text-2xl font-medium text-gray-700 dark:text-gray-300 text-center leading-relaxed mb-8">
-                      "{testimonial.comment}"
+                      "{testimonials[currentIndex].comment}"
                     </blockquote>
 
                     {/* Date */}
                     <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(testimonial.created_at).toLocaleDateString('en-US', {
+                      {new Date(testimonials[currentIndex].created_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -545,15 +433,15 @@ export default function TestimonialSection() {
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Navigation Controls */}
           <div className="flex items-center justify-center mt-12 space-x-6">
             <button
               onClick={prevTestimonial}
-              disabled={isAnimating || testimonials.length <= 1}
-              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+              disabled={testimonials.length <= 1}
+              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group transform hover:scale-110"
             >
               <ChevronLeft className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
             </button>
@@ -565,7 +453,6 @@ export default function TestimonialSection() {
                   <button
                     key={index}
                     onClick={() => goToTestimonial(index)}
-                    disabled={isAnimating}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
                       index === currentIndex
                         ? 'bg-red-500 scale-125'
@@ -578,8 +465,8 @@ export default function TestimonialSection() {
 
             <button
               onClick={nextTestimonial}
-              disabled={isAnimating || testimonials.length <= 1}
-              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+              disabled={testimonials.length <= 1}
+              className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group transform hover:scale-110"
             >
               <ChevronRight className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-red-500 transition-colors" />
             </button>
