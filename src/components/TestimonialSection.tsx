@@ -35,8 +35,8 @@ export default function TestimonialSection() {
   const headerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  // Fallback testimonials data
-  const fallbackTestimonials: Testimonial[] = [
+  // Built-in testimonials data
+  const builtInTestimonials: Testimonial[] = [
     {
       id: '1',
       user_name: 'Sarah Chen',
@@ -130,22 +130,24 @@ export default function TestimonialSection() {
         throw fetchError;
       }
 
+      let allTestimonials = [...builtInTestimonials];
+
       if (data && data.length > 0) {
         const formattedTestimonials = data.map(testimonial => ({
           ...testimonial,
           avatar_color: getAvatarColor(testimonial.user_name),
           country: 'Canada' // Default country since we don't store this
         }));
-        setTestimonials(formattedTestimonials);
-      } else {
-        // Use fallback testimonials if no data
-        setTestimonials(fallbackTestimonials);
+        // Add user testimonials after built-in ones
+        allTestimonials = [...builtInTestimonials, ...formattedTestimonials];
       }
+
+      setTestimonials(allTestimonials);
     } catch (error: any) {
       console.error('Error in fetchTestimonials:', error);
       setError('Failed to load testimonials');
-      // Use fallback testimonials on error
-      setTestimonials(fallbackTestimonials);
+      // Use built-in testimonials on error
+      setTestimonials(builtInTestimonials);
     } finally {
       setLoading(false);
     }
