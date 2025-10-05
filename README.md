@@ -1,8 +1,8 @@
-# MyCIP - Canadian Immigration Pathways
+#🇨🇦MyCIP: CANADIAN IMMIGRATION PATHWAYS cd ~ mycip.ca 
 
-Your trusted companion for navigating Canadian immigration pathways. Get expert guidance on PR applications, provincial programs, Calculate CRS Score and immigration updates.
+Your trusted companion for navigating Canadian immigration pathways. Get expert guidance on PR applications, provincial programs, Calculate CRS Score and immigration updates, all under one space.
 
-## 🚀 Features
+## Key Features
 
 - **Comprehensive Province Guide** - Detailed information for all 13 Canadian provinces and territories.
 - **Real-time Immigration Updates** - Latest policy changes and program updates
@@ -19,9 +19,8 @@ Your trusted companion for navigating Canadian immigration pathways. Get expert 
 - **Styling**: Tailwind CSS with custom animations
 - **Authentication**: Hybrid Supabase + Local Storage system
 - **Routing**: React Router v6 with future flags
-- **Icons**: Lucide React
-- **Notifications**: React Hot Toast
-- **Deployment**: Netlify with custom domain (godaddy)
+- **Icons & UI** | Lucide React + React Hot Toast
+- **Deployment**: Netlify (custom domain via godaddy)
 
 ## 🏗️ Architecture
 
@@ -113,6 +112,13 @@ src/
 - Instagram: [@ttalha_13](https://www.instagram.com/ttalha_13/)
 - LinkedIn: [Talha](https://www.linkedin.com/in/talha-806869188/)
 - Twitter: [@abu4323](https://x.com/abu4323)
+
+## 📄 License
+
+This project is **proprietary** and not open for public use, distribution, or modification.  
+All rights are reserved by the author.  
+Unauthorized copying or reuse of any part of this project is strictly prohibited.
+
 
 
 ## 🙏 Acknowledgments
