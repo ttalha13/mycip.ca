@@ -278,6 +278,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (import.meta.env.DEV) {
           console.error('Supabase password reset error:', error);
         }
+        
+        // Handle specific error cases
+        if (error.message?.includes('over_email_send_rate_limit') || 
+            error.message?.includes('rate limit') ||
+            error.message?.includes('429')) {
+          return {
+            error: new Error('Too many password reset requests. Please wait 5-10 minutes before trying again.'),
+            message: 'Rate limited'
+          };
+        }
+        
         throw error;
       }
 

@@ -106,8 +106,10 @@ export default function NewPasswordReset() {
 
       if (error) {
         console.error('Password reset error:', error);
-        if (error.message.includes('For security purposes')) {
-          setError('Please wait before requesting another password reset email.');
+        if (error.message.includes('For security purposes') || 
+            error.message.includes('rate limit') ||
+            error.message.includes('Too many')) {
+          setError('Too many requests. Please wait 5-10 minutes before trying again.');
         } else {
           setError(error.message || 'Failed to send password reset email');
         }
