@@ -313,9 +313,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resetPassword = async (email: string): Promise<{ error: Error | null; message?: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
     
-    if (import.meta.env.DEV) {
-      console.log('Attempting password reset for:', trimmedEmail);
-    }
+    console.log('🔄 Starting password reset for:', trimmedEmail);
     
     if (!trimmedEmail) {
       return {
@@ -336,16 +334,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://mycip.ca';
       const redirectUrl = `${baseUrl}/auth/callback?type=recovery`;
       
-      console.log('Password reset redirect URL:', redirectUrl);
+      console.log('🔗 Password reset redirect URL:', redirectUrl);
+      console.log('🌐 Current environment:', import.meta.env.DEV ? 'development' : 'production');
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
       });
 
+      console.log('📧 Supabase resetPasswordForEmail response:', { error });
+
       if (error) {
-        if (import.meta.env.DEV) {
-          console.error('Supabase password reset error:', error);
-        }
+        console.error('❌ Supabase password reset error:', error);
         
         // Handle specific error cases
         if (error.message?.includes('over_email_send_rate_limit') || 
@@ -361,18 +360,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
 
-      if (import.meta.env.DEV) {
-        console.log('Password reset email sent for:', trimmedEmail);
-        console.log('Redirect URL:', redirectUrl);
-      }
+      console.log('✅ Password reset email sent successfully for:', trimmedEmail);
+      console.log('📬 Check your email for the reset link');
+      
       return { 
         error: null,
         message: 'Password reset email sent! Please check your inbox and spam folder. The link will redirect you back to set a new password.' 
       };
     } catch (error: any) {
-      if (import.meta.env.DEV) {
-        console.error('Password reset error:', error);
-      }
+      console.error('💥 Password reset exception:', error);
       return {
         error: new Error(error.message || 'Failed to send password reset email. Please try again.'),
         message: 'Reset failed'

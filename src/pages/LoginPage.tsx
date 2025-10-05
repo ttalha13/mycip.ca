@@ -131,10 +131,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
     
     try {
+      console.log('🔄 Starting forgot password process for:', trimmedEmail);
       const result = await resetPassword(trimmedEmail);
       
       if (result.error) {
-        console.error('Password reset error:', result.error);
+        console.error('❌ Password reset error:', result.error);
         // Check for rate limiting error
         if (result.error.message?.includes('For security purposes, you can only request this after')) {
           toast.error('Please wait before requesting another password reset email. Try again in a few seconds.', {
@@ -144,6 +145,7 @@ export default function LoginPage() {
           toast.error(result.error.message || 'Failed to send password reset email');
         }
       } else {
+        console.log('✅ Password reset initiated successfully');
         toast.success('Password reset email sent! Please check your inbox.', {
           duration: 5000,
         });
@@ -151,7 +153,7 @@ export default function LoginPage() {
         setEmail('');
       }
     } catch (error: any) {
-      console.error('Password reset exception:', error);
+      console.error('💥 Password reset exception:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
