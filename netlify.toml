@@ -29,6 +29,25 @@
 [context.production]
   environment = { URL = "https://mycip.ca", NODE_ENV = "production" }
 
+# Domain Configuration
+[[redirects]]
+  from = "https://www.mycip.ca/*"
+  to = "https://mycip.ca/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://mycip.ca/*"
+  to = "https://mycip.ca/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.mycip.ca/*"
+  to = "https://mycip.ca/:splat"
+  status = 301
+  force = true
+
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
 
