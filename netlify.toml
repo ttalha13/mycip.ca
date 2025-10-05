@@ -27,10 +27,7 @@
 
 # Custom Domain Configuration
 [context.production]
-  environment = { 
-    URL = "https://mycip.ca",
-    NODE_ENV = "production"
-  }
+  environment = { URL = "https://mycip.ca", NODE_ENV = "production" }
 
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
