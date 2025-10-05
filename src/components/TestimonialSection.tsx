@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Star, Quote, Users, TrendingUp, Award, Globe, ChevronLeft, ChevronRight, Send, User, MessageSquare, Loader2, CheckCircle } from 'lucide-react';
 import { gsap } from 'gsap';
 import { supabase } from '../lib/supabase';
@@ -114,7 +114,7 @@ export default function TestimonialSection() {
     return colors[index];
   };
 
-  const fetchTestimonials = async () => {
+  const fetchTestimonials = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -151,94 +151,9 @@ export default function TestimonialSection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [builtInTestimonials]);
 
-  const stats = [
-    { icon: Users, value: `${testimonials.length}+`, label: 'Success Stories', color: 'text-red-500' },
-    { icon: TrendingUp, value: '98.5%', label: 'Success Rate', color: 'text-green-500' },
-    { icon: Award, value: '10', label: 'Provinces Covered', color: 'text-blue-500' },
-    { icon: Globe, value: '10+', label: 'Countries', color: 'text-purple-500' }
-  ];
-
-  // Fetch testimonials on component mount
-  useEffect(() => {
-    fetchTestimonials();
-  }, []);
-
-  // Initialize GSAP animations
-  useEffect(() => {
-    if (!containerRef.current || loading) return;
-
-    // Animate header on mount
-    gsap.fromTo(headerRef.current, 
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
-    );
-
-    // Animate stats
-    gsap.fromTo(statsRef.current?.children || [], 
-      { opacity: 0, y: 30, scale: 0.8 },
-      { 
-        opacity: 1, 
-        y: 0, 
-        scale: 1, 
-        duration: 0.8, 
-        stagger: 0.1, 
-        delay: 0.3,
-        ease: "back.out(1.7)" 
-      }
-    );
-
-    // Initial card setup
-    cardRefs.current.forEach((card, index) => {
-      if (card) {
-        gsap.set(card, {
-          rotationY: index === currentIndex ? 0 : index < currentIndex ? -90 : 90,
-          opacity: index === currentIndex ? 1 : 0,
-          scale: index === currentIndex ? 1 : 0.8,
-          z: index === currentIndex ? 0 : -100
-        });
-      }
-    });
-
-  }, [loading, currentIndex]);
-
-  // Auto-rotate testimonials
-  useEffect(() => {
-    if (loading || testimonials.length === 0) return;
-    
-    const interval = setInterval(() => {
-      if (!isAnimating) {
-        nextTestimonial();
-      }
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, [currentIndex, isAnimating, loading, testimonials.length, nextTestimonial]);
-
-  const nextTestimonial = () => {
-    if (isAnimating || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    
-    const nextIndex = (currentIndex + 1) % testimonials.length;
-    animateTransition(nextIndex);
-  };
-
-  const prevTestimonial = () => {
-    if (isAnimating || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    
-    const prevIndex = currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1;
-    animateTransition(prevIndex);
-  };
-
-  const goToTestimonial = (index: number) => {
-    if (isAnimating || index === currentIndex || testimonials.length <= 1) return;
-    setIsAnimating(true);
-    animateTransition(index);
-  };
-
-  const animateTransition = (newIndex: number) => {
+  const animateTransition = useCallback((newIndex: number) => {
     const currentCard = cardRefs.current[currentIndex];
     const nextCard = cardRefs.current[newIndex];
 
@@ -281,39 +196,31 @@ export default function TestimonialSection() {
         "-=0.2"
       );
     }
-  };
+  }, [currentIndex]);
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-5 w-5 transition-colors duration-300 ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'
-        }`}
-      />
-    ));
-  };
+  const nextTestimonial = useCallback(() => {
+    if (isAnimating || testimonials.length <= 1) return;
+    setIsAnimating(true);
+    
+    const nextIndex = (currentIndex + 1) % testimonials.length;
+    animateTransition(nextIndex);
+  }, [isAnimating, testimonials.length, currentIndex, animateTransition]);
 
-  const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('permanent resident')) {
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-    } else if (statusLower.includes('pnp') || statusLower.includes('nominee')) {
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-    } else if (statusLower.includes('express entry') || statusLower.includes('ita')) {
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
-    } else if (statusLower.includes('quebec')) {
-      return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
-    } else {
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
-    }
-  };
+  const prevTestimonial = useCallback(() => {
+    if (isAnimating || testimonials.length <= 1) return;
+    setIsAnimating(true);
+    
+    const prevIndex = currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1;
+    animateTransition(prevIndex);
+  }, [isAnimating, testimonials.length, currentIndex, animateTransition]);
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
+  const goToTestimonial = useCallback((index: number) => {
+    if (isAnimating || index === currentIndex || testimonials.length <= 1) return;
+    setIsAnimating(true);
+    animateTransition(index);
+  }, [isAnimating, currentIndex, testimonials.length, animateTransition]);
 
-  const handleReviewSubmit = async (e: React.FormEvent) => {
+  const handleReviewSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
@@ -388,6 +295,99 @@ export default function TestimonialSection() {
     } finally {
       setSubmittingReview(false);
     }
+  }, [user, reviewForm, fetchTestimonials]);
+
+  const stats = [
+    { icon: Users, value: `${testimonials.length}+`, label: 'Success Stories', color: 'text-red-500' },
+    { icon: TrendingUp, value: '98.5%', label: 'Success Rate', color: 'text-green-500' },
+    { icon: Award, value: '10', label: 'Provinces Covered', color: 'text-blue-500' },
+    { icon: Globe, value: '10+', label: 'Countries', color: 'text-purple-500' }
+  ];
+
+  // Fetch testimonials on component mount
+  useEffect(() => {
+    fetchTestimonials();
+  }, [fetchTestimonials]);
+
+  // Initialize GSAP animations
+  useEffect(() => {
+    if (!containerRef.current || loading) return;
+
+    // Animate header on mount
+    gsap.fromTo(headerRef.current, 
+      { opacity: 0, y: 50 },
+      { opacity: 1, y: 0, duration: 1, ease: "power3.out" }
+    );
+
+    // Animate stats
+    gsap.fromTo(statsRef.current?.children || [], 
+      { opacity: 0, y: 30, scale: 0.8 },
+      { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1, 
+        duration: 0.8, 
+        stagger: 0.1, 
+        delay: 0.3,
+        ease: "back.out(1.7)" 
+      }
+    );
+
+    // Initial card setup
+    cardRefs.current.forEach((card, index) => {
+      if (card) {
+        gsap.set(card, {
+          rotationY: index === currentIndex ? 0 : index < currentIndex ? -90 : 90,
+          opacity: index === currentIndex ? 1 : 0,
+          scale: index === currentIndex ? 1 : 0.8,
+          z: index === currentIndex ? 0 : -100
+        });
+      }
+    });
+
+  }, [loading, currentIndex]);
+
+  // Auto-rotate testimonials
+  useEffect(() => {
+    if (loading || testimonials.length === 0) return;
+    
+    const interval = setInterval(() => {
+      if (!isAnimating) {
+        nextTestimonial();
+      }
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [currentIndex, isAnimating, loading, testimonials.length, nextTestimonial]);
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`h-5 w-5 transition-colors duration-300 ${
+          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'
+        }`}
+      />
+    ));
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('permanent resident')) {
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+    } else if (statusLower.includes('pnp') || statusLower.includes('nominee')) {
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+    } else if (statusLower.includes('express entry') || statusLower.includes('ita')) {
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+    } else if (statusLower.includes('quebec')) {
+      return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300';
+    } else {
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   const renderStarRating = (rating: number, onRatingChange?: (rating: number) => void) => {
