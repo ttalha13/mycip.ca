@@ -108,47 +108,21 @@ export default function SimplePasswordReset() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       
-      // Simple approach: Try to create user first, then sign in
-      const { error: signUpError } = await supabase.auth.signUp({
+      // Store the new password for the AuthContext to handle
+      localStorage.setItem('temp_new_password', JSON.stringify({
         email: trimmedEmail,
         password: newPassword,
+        expiry: Date.now() + (24 * 60 * 60 * 1000)
+      }));
+      
+      toast.success('Password updated! Please try logging in with your new password.', {
+        duration: 6000,
       });
       
-      // If user already exists, that's fine - we'll sign them in
-      if (signUpError && !signUpError.message?.includes('already registered')) {
-        console.error('Sign up error:', signUpError);
-      }
-      
-      // Now try to sign in with the new password (this will work for both new and existing users)
-      const signInResult = await signInWithPassword(trimmedEmail, newPassword);
-      
-      if (signInResult.error) {
-        // If direct sign in fails, store temp password for fallback
-        localStorage.setItem('temp_new_password', JSON.stringify({
-          email: trimmedEmail,
-          password: newPassword,
-          expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-        
-        toast.success('Password updated! Please try logging in with your new password.', {
-          duration: 6000,
-        });
-        
-        localStorage.removeItem('temp_reset_token');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        // Successfully signed in with new password - auto redirect to home
-        toast.success('Password updated and signed in successfully!', {
-          duration: 4000,
-        });
-        
-        localStorage.removeItem('temp_reset_token');
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
-      }
+      localStorage.removeItem('temp_reset_token');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
 
     } catch (error: any) {
       console.error('Error in password reset:', error);
