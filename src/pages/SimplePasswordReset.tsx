@@ -108,21 +108,37 @@ export default function SimplePasswordReset() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       
-      // Store the new password for the AuthContext to handle
-      localStorage.setItem('temp_new_password', JSON.stringify({
-        email: trimmedEmail,
-        password: newPassword,
-        expiry: Date.now() + (24 * 60 * 60 * 1000)
-      }));
+      // Now try to sign in with the new password (this will work for both new and existing users)
+      const signInResult = await signInWithPassword(trimmedEmail, newPassword);
       
-      toast.success('Password updated! Please try logging in with your new password.', {
-        duration: 6000,
-      });
-      
-      localStorage.removeItem('temp_reset_token');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      if (signInResult.error) {
+        // If direct sign in fails, store temp password for fallback
+        localStorage.setItem('temp_new_password', JSON.stringify({
+          email: trimmedEmail,
+          password: newPassword,
+          expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+        
+        toast.success('Password updated! Please try logging in with your new password.', {
+          duration: 6000,
+        });
+        
+        localStorage.removeItem('temp_reset_token');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        // Successfully signed in with new password - auto redirect to home
+        toast.success('Password updated and signed in successfully!', {
+          duration: 4000,
+        });
+        
+        localStorage.removeItem('temp_reset_token');
+        // Force immediate redirect to homepage
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      }
 
     } catch (error: any) {
       console.error('Error in password reset:', error);
