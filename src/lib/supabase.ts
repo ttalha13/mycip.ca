@@ -34,9 +34,7 @@ try {
         flowType: 'pkce',
         debug: import.meta.env.DEV,
         storage: window.localStorage,
-        storageKey: 'mycip.auth.token',
-        // Prevent multiple concurrent refresh attempts
-        lock: true
+        storageKey: 'mycip.auth.token'
       },
       global: {
         headers: {
