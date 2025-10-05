@@ -11,6 +11,7 @@ import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import NewPasswordReset from './pages/NewPasswordReset';
+import NewPasswordReset from './pages/NewPasswordReset';
 
 function App() {
   return (
