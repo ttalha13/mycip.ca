@@ -332,18 +332,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      // Use the correct redirect URL that matches your app routing
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      // Use production URL for redirect
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3000' : 'https://mycip.ca';
+      const redirectUrl = `${baseUrl}/auth/callback?type=recovery`;
+      
+      console.log('Password reset redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: redirectUrl,
-        // Add these options to help with delivery
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            redirect_to: redirectUrl
-          }
-        }
       });
 
       if (error) {
@@ -354,9 +350,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Handle specific error cases
         if (error.message?.includes('over_email_send_rate_limit') || 
             error.message?.includes('rate limit') ||
-            error.message?.includes('429')) {
+            error.message?.includes('429') ||
+            error.message?.includes('For security purposes, you can only request this after')) {
           return {
-            error: new Error('Too many password reset requests. Please wait 5-10 minutes before trying again.'),
+            error: new Error('Too many password reset requests. Please wait 60 seconds before trying again.'),
             message: 'Rate limited'
           };
         }
@@ -370,7 +367,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       return { 
         error: null,
-        message: 'Password reset email sent! Please check your inbox.' 
+        message: 'Password reset email sent! Please check your inbox and spam folder. The link will redirect you back to set a new password.' 
       };
     } catch (error: any) {
       if (import.meta.env.DEV) {

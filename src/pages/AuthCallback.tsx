@@ -20,8 +20,18 @@ export default function AuthCallback() {
         console.log('Hash:', window.location.hash);
         console.log('Search params:', window.location.search);
         
-        // Let Supabase automatically handle the auth callback
+        // Handle the auth callback from URL hash or search params
         const { data, error } = await supabase.auth.getSession();
+        
+        // Also try to exchange the code if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        
+        const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+        const type = urlParams.get('type') || hashParams.get('type');
+        
+        console.log('Callback params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
         
         if (error) {
           console.error('Error getting session after callback:', error);
@@ -33,12 +43,8 @@ export default function AuthCallback() {
           
           // Check if this is a recovery session (password reset)
           const urlType = searchParams.get('type');
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const hashType = hashParams.get('type');
-          
-          if (urlType === 'recovery' || hashType === 'recovery') {
+          if (type === 'recovery') {
             console.log('Recovery session detected, redirecting to reset password');
-            // Create a simple password reset page
             navigate('/new-password-reset');
             return;
           }
@@ -47,11 +53,35 @@ export default function AuthCallback() {
           setSuccess(true);
           setTimeout(() => navigate('/'), 1500);
         } else {
-          throw new Error('No session created after authentication');
+          // If no session but we have tokens, try to set the session
+          if (accessToken && refreshToken) {
+            console.log('Attempting to set session with tokens');
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (sessionError) {
+              throw sessionError;
+            }
+            
+            if (sessionData.session) {
+              console.log('Session set successfully');
+              if (type === 'recovery') {
+                navigate('/new-password-reset');
+                return;
+              }
+              setSuccess(true);
+              setTimeout(() => navigate('/'), 1500);
+              return;
+            }
+          }
+          
+          throw new Error('No session created after authentication. Please try again.');
         }
       } catch (error: any) {
         console.error('Error in auth callback:', error);
-        setError(error.message || 'An unexpected error occurred. Please try again.');
+        setError(error.message || 'Authentication failed. Please try the password reset again.');
         setTimeout(() => navigate('/login'), 3000);
       } finally {
         setProcessing(false);
