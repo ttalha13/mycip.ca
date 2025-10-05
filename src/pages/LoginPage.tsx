@@ -132,7 +132,14 @@ export default function LoginPage() {
       
       if (result.error) {
         console.error('Password reset error:', result.error);
-        toast.error(result.error.message || 'Failed to send password reset email');
+        // Check for rate limiting error
+        if (result.error.message?.includes('For security purposes, you can only request this after')) {
+          toast.error('Please wait before requesting another password reset email. Try again in a few seconds.', {
+            duration: 5000,
+          });
+        } else {
+          toast.error(result.error.message || 'Failed to send password reset email');
+        }
       } else {
         toast.success('Password reset email sent! Please check your inbox.', {
           duration: 5000,
