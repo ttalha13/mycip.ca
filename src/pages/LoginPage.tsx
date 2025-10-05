@@ -459,6 +459,14 @@ export default function LoginPage() {
               >
                 Forgot your password?
               </button>
+              <div className="mt-2">
+                <button
+                  onClick={() => navigate('/direct-password-reset')}
+                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline"
+                >
+                  Alternative: Reset with current password
+                </button>
+              </div>
             </div>
           )}
 

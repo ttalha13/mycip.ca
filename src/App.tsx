@@ -11,6 +11,7 @@ import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import NewPasswordReset from './pages/NewPasswordReset';
+import DirectPasswordReset from './pages/DirectPasswordReset';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/new-password-reset" element={<NewPasswordReset />} />
+              <Route path="/direct-password-reset" element={<DirectPasswordReset />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               
               {/* Protected routes */}
