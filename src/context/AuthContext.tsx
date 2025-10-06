@@ -147,36 +147,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({
+      // Generate 6-digit token
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+      
+      // Store token in localStorage for verification
+      const tokens = JSON.parse(localStorage.getItem('mycip_pending_tokens') || '[]');
+      const newToken = {
         email: trimmedEmail,
-        type: 'email',
-        options: {
-          data: name ? { name, full_name: name } : undefined,
-          shouldCreateUser: true,
+        token,
+        expiresAt,
+        attempts: 0,
+        name: name || ''
+      };
+      
+      // Remove any existing tokens for this email
+      const filteredTokens = tokens.filter((t: any) => t.email !== trimmedEmail);
+      filteredTokens.push(newToken);
+      localStorage.setItem('mycip_pending_tokens', JSON.stringify(filteredTokens));
+      
+      // Send email via Edge Function
+      const { data, error } = await supabase.functions.invoke('send-otp-email', {
+        body: {
+          email: trimmedEmail,
+          token,
+          name: name || ''
         }
       });
 
       if (error) {
-        console.error('Supabase OTP error:', error);
+        console.error('Email sending error:', error);
         
-        // Handle specific error cases
-        if (error.message.includes('rate limit')) {
-          return { success: false, message: 'Too many requests. Please wait a moment before trying again.' };
-        }
-        
-        if (error.message.includes('invalid email')) {
-          return { success: false, message: 'Please enter a valid email address.' };
-        }
-
-        return { success: false, message: error.message || 'Failed to send verification code. Please try again.' };
+        return { success: false, message: 'Failed to send email. Please try again.' };
       }
 
       return { 
         success: true, 
-        message: `Verification code sent to ${trimmedEmail}. Please check your email and enter the 6-digit code.` 
+        message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.` 
       };
     } catch (error: any) {
-      console.error('Unexpected error sending OTP:', error);
+      console.error('Unexpected error sending email:', error);
       return { success: false, message: 'Something went wrong. Please try again.' };
     }
   };
@@ -194,39 +204,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      // Get stored tokens
+      const tokens = JSON.parse(localStorage.getItem('mycip_pending_tokens') || '[]');
+      const tokenRecord = tokens.find((t: any) => t.email === trimmedEmail);
+      
+      if (!tokenRecord) {
+        return { success: false, message: 'No valid token found. Please request a new one.' };
+      }
+      
+      if (tokenRecord.expiresAt <= Date.now()) {
+        // Remove expired token
+        const filteredTokens = tokens.filter((t: any) => t.email !== trimmedEmail);
+        localStorage.setItem('mycip_pending_tokens', JSON.stringify(filteredTokens));
+        return { success: false, message: 'Code has expired. Please request a new one.', shouldReset: true };
+      }
+      
+      if (tokenRecord.attempts >= 3) {
+        // Remove token after too many attempts
+        const filteredTokens = tokens.filter((t: any) => t.email !== trimmedEmail);
+        localStorage.setItem('mycip_pending_tokens', JSON.stringify(filteredTokens));
+        return { success: false, message: 'Too many failed attempts. Please request a new code.', shouldReset: true };
+      }
+      
+      if (tokenRecord.token !== trimmedToken) {
+        // Increment attempts
+        tokenRecord.attempts += 1;
+        localStorage.setItem('mycip_pending_tokens', JSON.stringify(tokens));
+        const attemptsLeft = 3 - tokenRecord.attempts;
+        return { 
+          success: false, 
+          message: `Invalid code. ${attemptsLeft} attempts remaining.`,
+          shouldReset: attemptsLeft === 0
+        };
+      }
+      
+      // Token is valid - create/sign in user
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
-        token: trimmedToken,
-        type: 'email'
+        password: `temp_${trimmedToken}_${Date.now()}` // Temporary password
       });
+      
+      // If user doesn't exist, create them
+      if (error && error.message.includes('Invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password: `temp_${trimmedToken}_${Date.now()}`,
+          options: {
+            data: {
+              name: tokenRecord.name || '',
+              full_name: tokenRecord.name || ''
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.error('Sign up error:', signUpError);
+          return { success: false, message: 'Failed to create account. Please try again.' };
+        }
+        
+        // Remove used token
+        const filteredTokens = tokens.filter((t: any) => t.email !== trimmedEmail);
+        localStorage.setItem('mycip_pending_tokens', JSON.stringify(filteredTokens));
+        
+        return { success: true, message: 'Account created and signed in successfully!' };
+      }
 
       if (error) {
-        console.error('Supabase verify OTP error:', error);
-        
-        // Handle specific error cases
-        if (error.message.includes('expired')) {
-          return { success: false, message: 'Verification code has expired. Please request a new one.', shouldReset: true };
-        }
-        
-        if (error.message.includes('invalid')) {
-          return { success: false, message: 'Invalid verification code. Please check and try again.' };
-        }
-
-        if (error.message.includes('too many')) {
-          return { success: false, message: 'Too many failed attempts. Please request a new code.', shouldReset: true };
-        }
-
-        return { success: false, message: error.message || 'Invalid verification code. Please try again.' };
+        console.error('Sign in error:', error);
+        return { success: false, message: 'Sign in failed. Please try again.' };
       }
 
-      if (data.user) {
-        // User will be set automatically via onAuthStateChange
-        return { success: true, message: 'Successfully signed in!' };
-      }
+      // Remove used token
+      const filteredTokens = tokens.filter((t: any) => t.email !== trimmedEmail);
+      localStorage.setItem('mycip_pending_tokens', JSON.stringify(filteredTokens));
 
-      return { success: false, message: 'Verification failed. Please try again.' };
+      return { success: true, message: 'Successfully signed in!' };
+      
     } catch (error: any) {
-      console.error('Unexpected error verifying OTP:', error);
+      console.error('Unexpected error verifying token:', error);
       return { success: false, message: 'Something went wrong. Please try again.' };
     }
   };
