@@ -98,21 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const sendToken = async (email: string, name?: string): Promise<{ success: boolean; message: string }> => {
-    const trimmedEmail = email.trim().toLowerCase();
-    
-    if (!trimmedEmail) {
-      return { success: false, message: 'Please enter a valid email address' };
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      return { success: false, message: 'Please enter a valid email address' };
-    }
-
-    // Clean expired tokens first
-    cleanExpiredTokens();
-
     // Generate new token
     const token = generateToken();
     const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
@@ -125,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       attempts: 0
     };
 
+    const tokens = getTokens();
     const updatedTokens = tokens.filter(t => t.email !== trimmedEmail);
     updatedTokens.push(newToken);
     saveTokens(updatedTokens);

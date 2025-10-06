@@ -9,7 +9,6 @@ import ProvincePage from './pages/ProvincePage';
 import LoginPage from './pages/LoginPage';
 import ContactPage from './pages/ContactPage';
 import AuthCallback from './pages/AuthCallback';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -26,7 +25,6 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
               
               {/* Protected routes */}
               <Route
