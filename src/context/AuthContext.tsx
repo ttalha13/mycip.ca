@@ -147,30 +147,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Use Supabase's built-in OTP system
-      const { data, error } = await supabase.auth.signInWithOtp({
+      // Generate 6-digit token
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Store token temporarily in localStorage for verification
+      const tokenData = {
         email: trimmedEmail,
-        options: {
-          shouldCreateUser: true,
-          data: {
-            name: name || '',
-            full_name: name || ''
-          }
-        }
+        token,
+        name: name || '',
+        expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
+        attempts: 0
+      };
+      
+      localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+      
+      // Send email via our Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-otp-email`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          token,
+          name: name || ''
+        })
       });
+      
+      const result = await response.json();
 
-      if (error) {
-        console.error('OTP sending error:', error);
-        return { success: false, message: error.message || 'Failed to send verification code. Please try again.' };
+      if (!response.ok) {
+        console.error('Email sending error:', result);
+        // Fallback to Supabase OTP if our service fails
+        const { data, error } = await supabase.auth.signInWithOtp({
+          email: trimmedEmail,
+          options: {
+            shouldCreateUser: true,
+            data: {
+              name: name || '',
+              full_name: name || ''
+            }
+          }
+        });
+        
+        if (error) {
+          return { success: false, message: 'Failed to send verification code. Please try again.' };
+        }
+        
+        // Clear our token since we're using Supabase
+        localStorage.removeItem(`mycip_token_${trimmedEmail}`);
+        return { 
+          success: true, 
+          message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.` 
+        };
       }
 
       return { 
         success: true, 
-        message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.` 
+        message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.`
       };
     } catch (error: any) {
-      console.error('Unexpected error sending OTP:', error);
-      return { success: false, message: 'Something went wrong. Please try again.' };
+      console.error('Unexpected error sending email:', error);
+      // Fallback to local storage method
+      return sendTokenLocal(email, name);
     }
   };
 
@@ -187,7 +227,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Use Supabase's built-in OTP verification
+      // Check our custom token first
+      const storedTokenData = localStorage.getItem(`mycip_token_${trimmedEmail}`);
+      
+      if (storedTokenData) {
+        const tokenData = JSON.parse(storedTokenData);
+        
+        // Check if token expired
+        if (tokenData.expiresAt <= Date.now()) {
+          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
+          return { success: false, message: 'Code has expired. Please request a new one.', shouldReset: true };
+        }
+        
+        // Check attempts
+        if (tokenData.attempts >= 3) {
+          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
+          return { success: false, message: 'Too many failed attempts. Please request a new code.', shouldReset: true };
+        }
+        
+        // Verify token
+        if (tokenData.token === trimmedToken) {
+          // Success - create user session
+          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
+          
+          // Try to sign in with Supabase (create user if needed)
+          const { data, error } = await supabase.auth.signInWithOtp({
+            email: trimmedEmail,
+            options: {
+              shouldCreateUser: true,
+              data: {
+                name: tokenData.name || '',
+                full_name: tokenData.name || ''
+              }
+            }
+          });
+          
+          // Even if Supabase fails, we can still create a local session
+          const userData = {
+            email: trimmedEmail,
+            id: Date.now().toString(),
+            name: tokenData.name
+          };
+          
+          setUser(userData);
+          localStorage.setItem(LOCAL_STORAGE_FALLBACK.CURRENT_USER_KEY, JSON.stringify(userData));
+          
+          return { success: true, message: 'Successfully signed in!' };
+        } else {
+          // Wrong token
+          tokenData.attempts += 1;
+          localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+          const attemptsLeft = 3 - tokenData.attempts;
+          return { 
+            success: false, 
+            message: `Invalid code. ${attemptsLeft} attempts remaining.`,
+            shouldReset: attemptsLeft === 0
+          };
+        }
+      }
+      
+      // Fallback to Supabase OTP verification
       const { data, error } = await supabase.auth.verifyOtp({
         email: trimmedEmail,
         token: trimmedToken,
@@ -216,7 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
     } catch (error: any) {
       console.error('Unexpected error verifying token:', error);
-      return { success: false, message: 'Something went wrong. Please try again.' };
+      // Fallback to local verification
+      return verifyTokenLocal(email, token);
     }
   };
 

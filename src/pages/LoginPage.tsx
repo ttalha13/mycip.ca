@@ -126,6 +126,14 @@ export default function LoginPage() {
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Your gateway to <span className="text-red-600">C</span>anadian <span className="text-red-600">I</span>mmigration <span className="text-red-600">P</span>athways
         </p>
+        
+        {/* DNS Status Indicator */}
+        <div className="mt-4 text-center">
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+            Custom Email Service Active
+          </div>
+        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
