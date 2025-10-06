@@ -113,18 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clean expired tokens first
     cleanExpiredTokens();
 
-    // Check if user already has a valid token (rate limiting)
-    const tokens = getTokens();
-    const existingToken = tokens.find(t => t.email === trimmedEmail && t.expiresAt > Date.now());
-    
-    if (existingToken) {
-      const timeLeft = Math.ceil((existingToken.expiresAt - Date.now()) / 1000 / 60);
-      return { 
-        success: false, 
-        message: `Please wait ${timeLeft} minutes before requesting a new token` 
-      };
-    }
-
     // Generate new token
     const token = generateToken();
     const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
