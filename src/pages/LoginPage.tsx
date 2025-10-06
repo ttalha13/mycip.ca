@@ -262,22 +262,6 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* Security Notice */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <div className="flex items-start">
-              <Shield className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                  Secure Token Authentication
-                </h4>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  • Tokens expire in 10 minutes<br/>
-                  • Maximum 3 verification attempts<br/>
-                  • No passwords to remember or forget
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
