@@ -192,7 +192,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: 'Too many failed attempts. Please request a new token.' };
     }
 
-        shouldReset: true
     if (tokenRecord.token !== trimmedToken) {
       // Increment attempts
       tokenRecord.attempts += 1;
@@ -200,7 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const attemptsLeft = 3 - tokenRecord.attempts;
       return { 
         success: false, 
-        message: `Invalid token. ${attemptsLeft} attempts remaining.` 
+        message: `Invalid token. ${attemptsLeft} attempts remaining.`,
+        shouldReset: attemptsLeft === 0
       };
     }
 
