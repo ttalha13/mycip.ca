@@ -178,7 +178,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Email sending error:', error);
         
-        return { success: false, message: 'Failed to send email. Please try again.' };
+        // Try to get more specific error information
+        let errorMessage = 'Failed to send email. Please try again.';
+        if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        return { success: false, message: errorMessage };
+      }
+
+      // Check if the response indicates an error
+      if (data && data.error) {
+        console.error('Edge Function returned error:', data);
+        return { success: false, message: data.details || data.error };
       }
 
       return { 

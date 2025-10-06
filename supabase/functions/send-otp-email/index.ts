@@ -19,11 +19,51 @@ serve(async (req) => {
   }
 
   try {
+    // Check if RESEND_API_KEY is available
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+    
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY environment variable is not set')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Email service not configured', 
+          details: 'RESEND_API_KEY environment variable is missing' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     const { email, token, name }: EmailRequest = await req.json()
 
     if (!email || !token) {
       return new Response(
         JSON.stringify({ error: 'Email and token are required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate token format (6 digits)
+    if (!/^\d{6}$/.test(token)) {
+      return new Response(
+        JSON.stringify({ error: 'Token must be 6 digits' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -113,13 +153,9 @@ Having trouble? Contact us at @ttalha_13
 © ${new Date().getFullYear()} MyCIP - Canadian Immigration Pathways
     `
 
-    // Use Resend API (you can switch to SendGrid, Mailgun, etc.)
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-    
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY environment variable is not set')
-    }
+    console.log(`Attempting to send email to: ${email}`)
 
+    // Send email via Resend API
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -135,13 +171,36 @@ Having trouble? Contact us at @ttalha_13
       }),
     })
 
+    const responseText = await emailResponse.text()
+    console.log(`Resend API response status: ${emailResponse.status}`)
+    console.log(`Resend API response: ${responseText}`)
+
     if (!emailResponse.ok) {
-      const errorData = await emailResponse.text()
-      console.error('Email sending failed:', errorData)
-      throw new Error(`Failed to send email: ${emailResponse.status}`)
+      console.error('Email sending failed:', responseText)
+      
+      // Parse error response if possible
+      let errorMessage = 'Failed to send email'
+      try {
+        const errorData = JSON.parse(responseText)
+        errorMessage = errorData.message || errorData.error || errorMessage
+      } catch (e) {
+        // Use default error message
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Email sending failed', 
+          details: errorMessage,
+          status: emailResponse.status
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    const result = await emailResponse.json()
+    const result = JSON.parse(responseText)
     console.log('Email sent successfully:', result)
 
     return new Response(
@@ -160,7 +219,7 @@ Having trouble? Contact us at @ttalha_13
     
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to send email', 
+        error: 'Internal server error', 
         details: error.message 
       }),
       { 
