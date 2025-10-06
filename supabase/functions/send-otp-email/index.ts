@@ -231,7 +231,7 @@ Having trouble? Contact us at @ttalha_13
     console.log('🎯 Target email:', email)
 
     const emailPayload = {
-      from: 'MyCIP <onboarding@resend.dev>',
+      from: 'MyCIP <noreply@mycip.ca>',
       to: [email],
       subject: `Your MyCIP Login Code: ${token}`,
       html: emailHtml,
