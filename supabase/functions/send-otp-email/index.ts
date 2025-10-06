@@ -13,9 +13,10 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('🚀 Edge Function started')
+  console.log('🚀 Edge Function started - send-otp-email')
   console.log('📝 Request method:', req.method)
   console.log('🌐 Request URL:', req.url)
+  console.log('📅 Timestamp:', new Date().toISOString())
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -35,7 +36,8 @@ serve(async (req) => {
         JSON.stringify({ 
           error: 'Email service not configured', 
           details: 'RESEND_API_KEY environment variable is missing',
-          debug: 'Check Supabase Dashboard → Edge Functions → Secrets'
+          debug: 'Check Supabase Dashboard → Edge Functions → Secrets',
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 500, 
@@ -44,13 +46,33 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ RESEND_API_KEY found, length:', RESEND_API_KEY.length)
-    console.log('🔑 API Key starts with:', RESEND_API_KEY.substring(0, 5) + '...')
+    console.log('✅ RESEND_API_KEY found')
+    console.log('🔑 API Key length:', RESEND_API_KEY.length)
+    console.log('🔑 API Key starts with:', RESEND_API_KEY.substring(0, 3) + '...')
+
+    // Validate API key format
+    if (!RESEND_API_KEY.startsWith('re_')) {
+      console.error('❌ Invalid RESEND_API_KEY format - should start with "re_"')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid API key format', 
+          details: 'Resend API key should start with "re_"',
+          debug: `Current key starts with: ${RESEND_API_KEY.substring(0, 3)}`,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     console.log('📦 Parsing request body...')
     let requestBody
     try {
-      requestBody = await req.json()
+      const bodyText = await req.text()
+      console.log('📝 Raw request body:', bodyText)
+      requestBody = JSON.parse(bodyText)
       console.log('✅ Request body parsed successfully')
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError)
@@ -58,7 +80,8 @@ serve(async (req) => {
         JSON.stringify({ 
           error: 'Invalid request body', 
           details: 'Request body must be valid JSON',
-          debug: parseError.message
+          debug: parseError.message,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 400, 
@@ -69,7 +92,7 @@ serve(async (req) => {
 
     const { email, token, name }: EmailRequest = requestBody
     console.log('📧 Email:', email)
-    console.log('🎫 Token length:', token?.length)
+    console.log('🎫 Token:', token ? `${token.substring(0, 2)}****` : 'undefined')
     console.log('👤 Name:', name || 'Not provided')
 
     if (!email || !token) {
@@ -77,7 +100,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Email and token are required',
-          debug: `Email: ${!!email}, Token: ${!!token}`
+          debug: `Email: ${!!email}, Token: ${!!token}`,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 400, 
@@ -93,7 +117,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Invalid email format',
-          debug: `Email provided: ${email}`
+          debug: `Email provided: ${email}`,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 400, 
@@ -108,7 +133,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Token must be 6 digits',
-          debug: `Token provided: ${token}, Length: ${token.length}`
+          debug: `Token provided: ${token}, Length: ${token.length}`,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 400, 
@@ -213,6 +239,9 @@ Having trouble? Contact us at @ttalha_13
     }
 
     console.log('📦 Email payload prepared')
+    console.log('📤 From:', emailPayload.from)
+    console.log('📥 To:', emailPayload.to)
+    console.log('📋 Subject:', emailPayload.subject)
 
     // Send email via Resend API
     console.log('🚀 Calling Resend API...')
@@ -226,7 +255,7 @@ Having trouble? Contact us at @ttalha_13
     })
 
     console.log('📡 Resend API response status:', emailResponse.status)
-    console.log('📡 Resend API response headers:', Object.fromEntries(emailResponse.headers.entries()))
+    console.log('📡 Resend API response ok:', emailResponse.ok)
 
     const responseText = await emailResponse.text()
     console.log('📡 Resend API response body:', responseText)
@@ -243,6 +272,7 @@ Having trouble? Contact us at @ttalha_13
         const errorData = JSON.parse(responseText)
         errorMessage = errorData.message || errorData.error || errorMessage
         errorDetails = JSON.stringify(errorData, null, 2)
+        console.error('❌ Parsed error data:', errorData)
       } catch (e) {
         console.log('📝 Could not parse error response as JSON')
       }
@@ -256,7 +286,8 @@ Having trouble? Contact us at @ttalha_13
             resendStatus: emailResponse.status,
             resendResponse: errorDetails,
             apiKeyLength: RESEND_API_KEY.length,
-            apiKeyPrefix: RESEND_API_KEY.substring(0, 5)
+            apiKeyPrefix: RESEND_API_KEY.substring(0, 5),
+            timestamp: new Date().toISOString()
           }
         }),
         { 
@@ -277,7 +308,8 @@ Having trouble? Contact us at @ttalha_13
           error: 'Unexpected response format from email service',
           debug: {
             responseText,
-            parseError: parseError.message
+            parseError: parseError.message,
+            timestamp: new Date().toISOString()
           }
         }),
         { 
@@ -295,7 +327,8 @@ Having trouble? Contact us at @ttalha_13
         emailId: result.id,
         debug: {
           resendStatus: emailResponse.status,
-          emailId: result.id
+          emailId: result.id,
+          timestamp: new Date().toISOString()
         }
       }),
       { 
@@ -305,6 +338,8 @@ Having trouble? Contact us at @ttalha_13
 
   } catch (error) {
     console.error('💥 Unexpected error in send-otp-email function:', error)
+    console.error('💥 Error name:', error.name)
+    console.error('💥 Error message:', error.message)
     console.error('💥 Error stack:', error.stack)
     
     return new Response(
@@ -313,7 +348,8 @@ Having trouble? Contact us at @ttalha_13
         details: error.message,
         debug: {
           errorName: error.name,
-          errorStack: error.stack
+          errorStack: error.stack,
+          timestamp: new Date().toISOString()
         }
       }),
       { 
