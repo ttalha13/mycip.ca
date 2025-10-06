@@ -13,21 +13,29 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('🚀 Edge Function started')
+  console.log('📝 Request method:', req.method)
+  console.log('🌐 Request URL:', req.url)
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight request handled')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('🔍 Checking environment variables...')
+    
     // Check if RESEND_API_KEY is available
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     
     if (!RESEND_API_KEY) {
-      console.error('RESEND_API_KEY environment variable is not set')
+      console.error('❌ RESEND_API_KEY environment variable is not set')
       return new Response(
         JSON.stringify({ 
           error: 'Email service not configured', 
-          details: 'RESEND_API_KEY environment variable is missing' 
+          details: 'RESEND_API_KEY environment variable is missing',
+          debug: 'Check Supabase Dashboard → Edge Functions → Secrets'
         }),
         { 
           status: 500, 
@@ -36,11 +44,41 @@ serve(async (req) => {
       )
     }
 
-    const { email, token, name }: EmailRequest = await req.json()
+    console.log('✅ RESEND_API_KEY found, length:', RESEND_API_KEY.length)
+    console.log('🔑 API Key starts with:', RESEND_API_KEY.substring(0, 5) + '...')
+
+    console.log('📦 Parsing request body...')
+    let requestBody
+    try {
+      requestBody = await req.json()
+      console.log('✅ Request body parsed successfully')
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request body', 
+          details: 'Request body must be valid JSON',
+          debug: parseError.message
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    const { email, token, name }: EmailRequest = requestBody
+    console.log('📧 Email:', email)
+    console.log('🎫 Token length:', token?.length)
+    console.log('👤 Name:', name || 'Not provided')
 
     if (!email || !token) {
+      console.error('❌ Missing required fields')
       return new Response(
-        JSON.stringify({ error: 'Email and token are required' }),
+        JSON.stringify({ 
+          error: 'Email and token are required',
+          debug: `Email: ${!!email}, Token: ${!!token}`
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -51,8 +89,12 @@ serve(async (req) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
+      console.error('❌ Invalid email format:', email)
       return new Response(
-        JSON.stringify({ error: 'Invalid email format' }),
+        JSON.stringify({ 
+          error: 'Invalid email format',
+          debug: `Email provided: ${email}`
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -62,14 +104,20 @@ serve(async (req) => {
 
     // Validate token format (6 digits)
     if (!/^\d{6}$/.test(token)) {
+      console.error('❌ Invalid token format:', token)
       return new Response(
-        JSON.stringify({ error: 'Token must be 6 digits' }),
+        JSON.stringify({ 
+          error: 'Token must be 6 digits',
+          debug: `Token provided: ${token}, Length: ${token.length}`
+        }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
+
+    console.log('✅ All validations passed')
 
     // Email HTML template
     const emailHtml = `
@@ -153,45 +201,63 @@ Having trouble? Contact us at @ttalha_13
 © ${new Date().getFullYear()} MyCIP - Canadian Immigration Pathways
     `
 
-    console.log(`Attempting to send email to: ${email}`)
+    console.log('📧 Preparing to send email via Resend API...')
+    console.log('🎯 Target email:', email)
+
+    const emailPayload = {
+      from: 'MyCIP <noreply@mycip.ca>',
+      to: [email],
+      subject: `Your MyCIP Login Code: ${token}`,
+      html: emailHtml,
+      text: emailText,
+    }
+
+    console.log('📦 Email payload prepared')
 
     // Send email via Resend API
+    console.log('🚀 Calling Resend API...')
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: 'MyCIP <noreply@mycip.ca>',
-        to: [email],
-        subject: `Your MyCIP Login Code: ${token}`,
-        html: emailHtml,
-        text: emailText,
-      }),
+      body: JSON.stringify(emailPayload),
     })
 
+    console.log('📡 Resend API response status:', emailResponse.status)
+    console.log('📡 Resend API response headers:', Object.fromEntries(emailResponse.headers.entries()))
+
     const responseText = await emailResponse.text()
-    console.log(`Resend API response status: ${emailResponse.status}`)
-    console.log(`Resend API response: ${responseText}`)
+    console.log('📡 Resend API response body:', responseText)
 
     if (!emailResponse.ok) {
-      console.error('Email sending failed:', responseText)
+      console.error('❌ Email sending failed with status:', emailResponse.status)
+      console.error('❌ Response body:', responseText)
       
       // Parse error response if possible
       let errorMessage = 'Failed to send email'
+      let errorDetails = responseText
+      
       try {
         const errorData = JSON.parse(responseText)
         errorMessage = errorData.message || errorData.error || errorMessage
+        errorDetails = JSON.stringify(errorData, null, 2)
       } catch (e) {
-        // Use default error message
+        console.log('📝 Could not parse error response as JSON')
       }
       
       return new Response(
         JSON.stringify({ 
           error: 'Email sending failed', 
           details: errorMessage,
-          status: emailResponse.status
+          status: emailResponse.status,
+          debug: {
+            resendStatus: emailResponse.status,
+            resendResponse: errorDetails,
+            apiKeyLength: RESEND_API_KEY.length,
+            apiKeyPrefix: RESEND_API_KEY.substring(0, 5)
+          }
         }),
         { 
           status: 500, 
@@ -200,14 +266,37 @@ Having trouble? Contact us at @ttalha_13
       )
     }
 
-    const result = JSON.parse(responseText)
-    console.log('Email sent successfully:', result)
+    let result
+    try {
+      result = JSON.parse(responseText)
+      console.log('✅ Email sent successfully:', result)
+    } catch (parseError) {
+      console.error('❌ Could not parse success response:', parseError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unexpected response format from email service',
+          debug: {
+            responseText,
+            parseError: parseError.message
+          }
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
+    console.log('🎉 Function completed successfully')
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Email sent successfully',
-        emailId: result.id 
+        emailId: result.id,
+        debug: {
+          resendStatus: emailResponse.status,
+          emailId: result.id
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -215,12 +304,17 @@ Having trouble? Contact us at @ttalha_13
     )
 
   } catch (error) {
-    console.error('Error in send-otp-email function:', error)
+    console.error('💥 Unexpected error in send-otp-email function:', error)
+    console.error('💥 Error stack:', error.stack)
     
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
-        details: error.message 
+        details: error.message,
+        debug: {
+          errorName: error.name,
+          errorStack: error.stack
+        }
       }),
       { 
         status: 500, 

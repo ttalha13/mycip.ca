@@ -178,10 +178,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         console.error('Email sending error:', error);
         
-        // Try to get more specific error information
+        // Enhanced error logging
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        
         let errorMessage = 'Failed to send email. Please try again.';
         if (error.message) {
           errorMessage = error.message;
+          console.error('Error message:', error.message);
         }
         
         return { success: false, message: errorMessage };
@@ -189,8 +192,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Check if the response indicates an error
       if (data && data.error) {
-        console.error('Edge Function returned error:', data);
-        return { success: false, message: data.details || data.error };
+        console.error('Edge Function returned error:', JSON.stringify(data, null, 2));
+        
+        // Show debug info in development
+        if (import.meta.env.DEV && data.debug) {
+          console.error('Debug info:', data.debug);
+        }
+        
+        let userMessage = data.details || data.error;
+        
+        // Add helpful hints for common errors
+        if (data.debug?.resendStatus === 422) {
+          userMessage += '\n\nTip: Check if your domain is verified in Resend dashboard.';
+        } else if (data.debug?.apiKeyLength && data.debug.apiKeyLength < 10) {
+          userMessage += '\n\nTip: Check if RESEND_API_KEY is set correctly in Supabase.';
+        }
+        
+        return { success: false, message: userMessage };
       }
 
       return { 
@@ -199,6 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     } catch (error: any) {
       console.error('Unexpected error sending email:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       return { success: false, message: 'Something went wrong. Please try again.' };
     }
   };
