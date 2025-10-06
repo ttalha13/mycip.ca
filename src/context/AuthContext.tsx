@@ -149,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
+        type: 'email',
         options: {
           data: name ? { name, full_name: name } : undefined,
           shouldCreateUser: true,
