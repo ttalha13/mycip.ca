@@ -1,27 +1,24 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 
 interface User {
   email: string;
   id: string;
-  source?: 'supabase' | 'local';
+  name?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUpWithPassword: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
-  resetPassword: (email: string, newPassword: string) => Promise<{ error: Error | null }>;
+  sendToken: (email: string, name?: string) => Promise<{ success: boolean; message: string }>;
+  verifyToken: (email: string, token: string) => Promise<{ success: boolean; message: string }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  signInWithPassword: async () => ({ error: null }),
-  signUpWithPassword: async () => ({ error: null }),
-  resetPassword: async () => ({ error: null }),
+  sendToken: async () => ({ success: false, message: '' }),
+  verifyToken: async () => ({ success: false, message: '' }),
   signOut: async () => {},
   loading: true,
 });
@@ -29,12 +26,20 @@ const AuthContext = createContext<AuthContextType>({
 // Local storage keys
 const USERS_KEY = 'mycip_users';
 const CURRENT_USER_KEY = 'mycip_current_user';
+const TOKENS_KEY = 'mycip_tokens';
 
 interface StoredUser {
   email: string;
-  password: string;
-  fullName?: string;
+  name?: string;
   id: string;
+  createdAt: string;
+}
+
+interface StoredToken {
+  email: string;
+  token: string;
+  expiresAt: number;
+  attempts: number;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,66 +47,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Initialize - check both Supabase and local storage
+  // Initialize - check for existing session
   useEffect(() => {
-    const initAuth = async () => {
+    const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+    if (currentUser) {
       try {
-        // First check Supabase session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (!error && session?.user) {
-          console.log('✅ Found existing Supabase user:', session.user.email);
-          setUser({
-            email: session.user.email || '',
-            id: session.user.id,
-            source: 'supabase'
-          });
-          setLoading(false);
-          return;
-        }
+        const userData = JSON.parse(currentUser);
+        setUser(userData);
       } catch (error) {
-        console.log('⚠️ Supabase not available, checking local storage');
+        localStorage.removeItem(CURRENT_USER_KEY);
       }
-
-      // If no Supabase session, check local storage
-      const currentUser = localStorage.getItem(CURRENT_USER_KEY);
-      if (currentUser) {
-        try {
-          const userData = JSON.parse(currentUser);
-          console.log('✅ Found existing local user:', userData.email);
-          setUser({ ...userData, source: 'local' });
-        } catch (error) {
-          localStorage.removeItem(CURRENT_USER_KEY);
-        }
-      }
-      
-      setLoading(false);
-    };
-
-    initAuth();
-
-    // Listen for Supabase auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('🔄 Supabase user signed in:', session.user.email);
-        setUser({
-          email: session.user.email || '',
-          id: session.user.id,
-          source: 'supabase'
-        });
-      } else if (event === 'SIGNED_OUT') {
-        console.log('🔄 Supabase user signed out');
-        // Only clear if it was a Supabase user
-        if (user?.source === 'supabase') {
-          setUser(null);
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    setLoading(false);
   }, []);
 
-  const getLocalUsers = (): StoredUser[] => {
+  const getUsers = (): StoredUser[] => {
     try {
       const users = localStorage.getItem(USERS_KEY);
       return users ? JSON.parse(users) : [];
@@ -110,237 +70,185 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const saveLocalUsers = (users: StoredUser[]) => {
+  const saveUsers = (users: StoredUser[]) => {
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
   };
 
-  const signInWithPassword = async (email: string, password: string): Promise<{ error: Error | null }> => {
-    const trimmedEmail = email.trim().toLowerCase();
-    
-    if (!trimmedEmail || !password) {
-      return { error: new Error('Please enter both email and password') };
-    }
-
-    // Check for temporary password reset first
+  const getTokens = (): StoredToken[] => {
     try {
-      const tempPasswordData = localStorage.getItem('temp_new_password');
-      if (tempPasswordData) {
-        const { email: tempEmail, password: tempPassword, expiry } = JSON.parse(tempPasswordData);
-        if (tempEmail === trimmedEmail && Date.now() < expiry) {
-          if (password === tempPassword) {
-            // Use the new password and clean up
-            localStorage.removeItem('temp_new_password');
-            console.log('✅ Using temporary reset password');
-            
-            // Create/update local user with new password
-            const localUsers = getLocalUsers();
-            const existingIndex = localUsers.findIndex(u => u.email === trimmedEmail);
-            if (existingIndex >= 0) {
-              localUsers[existingIndex].password = password;
-            } else {
-              localUsers.push({
-                email: trimmedEmail,
-                password: password,
-                id: Date.now().toString()
-              });
-            }
-            saveLocalUsers(localUsers);
-            
-            const userData = { 
-              email: trimmedEmail, 
-              id: Date.now().toString(),
-              source: 'local' as const
-            };
-            setUser(userData);
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
-            return { error: null };
-          }
-        } else if (Date.now() >= expiry) {
-          // Clean up expired temp password
-          localStorage.removeItem('temp_new_password');
-        }
-      }
-    } catch (error) {
-      console.log('Error checking temp password:', error);
+      const tokens = localStorage.getItem(TOKENS_KEY);
+      return tokens ? JSON.parse(tokens) : [];
+    } catch {
+      return [];
     }
-
-    // First try Supabase authentication
-    try {
-      console.log('🔄 Trying Supabase authentication for:', trimmedEmail);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: password,
-      });
-
-      if (!error && data.user) {
-        console.log('✅ Supabase authentication successful');
-        const userData = { 
-          email: data.user.email || '', 
-          id: data.user.id,
-          source: 'supabase' as const
-        };
-        setUser(userData);
-        return { error: null };
-      }
-      
-      if (error) {
-        console.log('⚠️ Supabase auth failed:', error.message);
-        // If Supabase returns a specific authentication error, return it immediately
-        if (error.message === 'Invalid login credentials' || error.message.includes('credentials')) {
-          return { error: new Error(error.message) };
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Supabase not available, trying local auth');
-    }
-
-    // If Supabase fails, try local authentication
-    console.log('🔄 Trying local authentication for:', trimmedEmail);
-    const localUsers = getLocalUsers();
-    const localUser = localUsers.find(u => u.email === trimmedEmail && u.password === password);
-    
-    if (localUser) {
-      console.log('✅ Local authentication successful');
-      const userData = { 
-        email: localUser.email, 
-        id: localUser.id,
-        source: 'local' as const
-      };
-      setUser(userData);
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
-      return { error: null };
-    }
-
-    return { error: new Error('Invalid email or password') };
   };
 
-  const signUpWithPassword = async (email: string, password: string, fullName?: string): Promise<{ error: Error | null }> => {
+  const saveTokens = (tokens: StoredToken[]) => {
+    localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+  };
+
+  const generateToken = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const cleanExpiredTokens = () => {
+    const tokens = getTokens();
+    const validTokens = tokens.filter(t => t.expiresAt > Date.now());
+    saveTokens(validTokens);
+  };
+
+  const sendToken = async (email: string, name?: string): Promise<{ success: boolean; message: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
     
-    if (!trimmedEmail || !password) {
-      return { error: new Error('Please enter both email and password') };
+    if (!trimmedEmail) {
+      return { success: false, message: 'Please enter a valid email address' };
     }
 
-    if (password.length < 6) {
-      return { error: new Error('Password must be at least 6 characters long') };
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return { success: false, message: 'Please enter a valid email address' };
     }
 
-    // Try Supabase first
-    try {
-      console.log('🔄 Trying Supabase signup for:', trimmedEmail);
-      const { data, error } = await supabase.auth.signUp({
-        email: trimmedEmail,
-        password: password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      });
+    // Clean expired tokens first
+    cleanExpiredTokens();
 
-      if (!error && data.user) {
-        console.log('✅ Supabase signup successful');
-        const userData = { 
-          email: data.user.email || '', 
-          id: data.user.id,
-          source: 'supabase' as const
-        };
-        setUser(userData);
-        return { error: null };
-      }
-
-      if (error) {
-        console.log('⚠️ Supabase signup failed:', error.message);
-      }
-    } catch (error) {
-      console.log('⚠️ Supabase not available, using local signup');
-    }
-
-    // Fallback to local storage
-    console.log('🔄 Using local signup for:', trimmedEmail);
-    const localUsers = getLocalUsers();
+    // Check if user already has a valid token (rate limiting)
+    const tokens = getTokens();
+    const existingToken = tokens.find(t => t.email === trimmedEmail && t.expiresAt > Date.now());
     
-    // Check if user already exists locally
-    if (localUsers.find(u => u.email === trimmedEmail)) {
-      return { error: new Error('An account with this email already exists') };
+    if (existingToken) {
+      const timeLeft = Math.ceil((existingToken.expiresAt - Date.now()) / 1000 / 60);
+      return { 
+        success: false, 
+        message: `Please wait ${timeLeft} minutes before requesting a new token` 
+      };
     }
 
-    // Create new local user
-    const newUser: StoredUser = {
+    // Generate new token
+    const token = generateToken();
+    const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+
+    // Save token
+    const newToken: StoredToken = {
       email: trimmedEmail,
-      password,
-      fullName,
-      id: Date.now().toString()
+      token,
+      expiresAt,
+      attempts: 0
     };
 
-    localUsers.push(newUser);
-    saveLocalUsers(localUsers);
+    const updatedTokens = tokens.filter(t => t.email !== trimmedEmail);
+    updatedTokens.push(newToken);
+    saveTokens(updatedTokens);
 
-    // Auto sign in
-    const userData = { 
-      email: newUser.email, 
-      id: newUser.id,
-      source: 'local' as const
+    // Create or update user record
+    const users = getUsers();
+    const existingUserIndex = users.findIndex(u => u.email === trimmedEmail);
+    
+    if (existingUserIndex >= 0) {
+      // Update existing user
+      if (name) {
+        users[existingUserIndex].name = name;
+      }
+    } else {
+      // Create new user
+      const newUser: StoredUser = {
+        email: trimmedEmail,
+        name: name || '',
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      users.push(newUser);
+    }
+    saveUsers(users);
+
+    // In a real app, you would send this via email service
+    // For demo purposes, we'll show it in console and alert
+    console.log(`🔐 Login Token for ${trimmedEmail}: ${token}`);
+    
+    // Show token in alert for demo (remove in production)
+    alert(`Demo Mode: Your login token is ${token}\n\nIn production, this would be sent to your email.`);
+
+    return { 
+      success: true, 
+      message: `Login token sent to ${trimmedEmail}. Please check your email and enter the 6-digit code.` 
     };
+  };
+
+  const verifyToken = async (email: string, token: string): Promise<{ success: boolean; message: string }> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedToken = token.trim();
+    
+    if (!trimmedEmail || !trimmedToken) {
+      return { success: false, message: 'Please enter both email and token' };
+    }
+
+    if (trimmedToken.length !== 6) {
+      return { success: false, message: 'Token must be 6 digits' };
+    }
+
+    // Clean expired tokens
+    cleanExpiredTokens();
+
+    const tokens = getTokens();
+    const tokenRecord = tokens.find(t => t.email === trimmedEmail);
+
+    if (!tokenRecord) {
+      return { success: false, message: 'No valid token found. Please request a new one.' };
+    }
+
+    if (tokenRecord.expiresAt <= Date.now()) {
+      // Remove expired token
+      const updatedTokens = tokens.filter(t => t.email !== trimmedEmail);
+      saveTokens(updatedTokens);
+      return { success: false, message: 'Token has expired. Please request a new one.' };
+    }
+
+    // Check attempts (max 3 attempts)
+    if (tokenRecord.attempts >= 3) {
+      // Remove token after max attempts
+      const updatedTokens = tokens.filter(t => t.email !== trimmedEmail);
+      saveTokens(updatedTokens);
+      return { success: false, message: 'Too many failed attempts. Please request a new token.' };
+    }
+
+    if (tokenRecord.token !== trimmedToken) {
+      // Increment attempts
+      tokenRecord.attempts += 1;
+      saveTokens(tokens);
+      const attemptsLeft = 3 - tokenRecord.attempts;
+      return { 
+        success: false, 
+        message: `Invalid token. ${attemptsLeft} attempts remaining.` 
+      };
+    }
+
+    // Token is valid - sign in user
+    const users = getUsers();
+    const user = users.find(u => u.email === trimmedEmail);
+
+    if (!user) {
+      return { success: false, message: 'User not found. Please try again.' };
+    }
+
+    // Remove used token
+    const updatedTokens = tokens.filter(t => t.email !== trimmedEmail);
+    saveTokens(updatedTokens);
+
+    // Set user session
+    const userData: User = {
+      email: user.email,
+      id: user.id,
+      name: user.name
+    };
+
     setUser(userData);
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
 
-    console.log('✅ Local signup successful');
-    return { error: null };
-  };
-
-  const resetPassword = async (email: string, newPassword: string): Promise<{ error: Error | null }> => {
-    const trimmedEmail = email.trim().toLowerCase();
-    
-    if (!trimmedEmail || !newPassword) {
-      return { error: new Error('Please enter both email and new password') };
-    }
-
-    if (newPassword.length < 6) {
-      return { error: new Error('Password must be at least 6 characters long') };
-    }
-
-    // For local users, update password directly
-    const localUsers = getLocalUsers();
-    const userIndex = localUsers.findIndex(u => u.email === trimmedEmail);
-    
-    if (userIndex !== -1) {
-      console.log('🔄 Resetting password for local user:', trimmedEmail);
-      localUsers[userIndex].password = newPassword;
-      saveLocalUsers(localUsers);
-      console.log('✅ Local password reset successful');
-      return { error: null };
-    }
-
-    // For Supabase users, we can't reset password directly
-    // But we can create a local override
-    console.log('🔄 Creating local password override for:', trimmedEmail);
-    const newLocalUser: StoredUser = {
-      email: trimmedEmail,
-      password: newPassword,
-      id: Date.now().toString()
-    };
-
-    localUsers.push(newLocalUser);
-    saveLocalUsers(localUsers);
-    
-    console.log('✅ Password reset successful (local override created)');
-    return { error: null };
+    return { success: true, message: 'Successfully signed in!' };
   };
 
   const signOut = async () => {
-    console.log('🔄 Signing out user:', user?.email);
-    
-    // Sign out from Supabase if it's a Supabase user
-    if (user?.source === 'supabase') {
-      try {
-        await supabase.auth.signOut();
-      } catch (error) {
-        console.log('⚠️ Supabase signout failed, continuing with local signout');
-      }
-    }
-    
-    // Clear local storage
     setUser(null);
     localStorage.removeItem(CURRENT_USER_KEY);
     navigate('/login');
@@ -349,9 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user,
-      signInWithPassword,
-      signUpWithPassword,
-      resetPassword,
+      sendToken,
+      verifyToken,
       signOut,
       loading
     }}>

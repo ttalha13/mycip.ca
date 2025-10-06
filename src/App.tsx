@@ -40,7 +40,6 @@ function App() {
                           <Route path="/" element={<HomePage />} />
                           <Route path="/province/:id" element={<ProvincePage />} />
                           <Route path="/contact" element={<ContactPage />} />
-                          {/* Catch-all route for unmatched paths */}
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                       </div>
