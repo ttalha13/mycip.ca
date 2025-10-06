@@ -212,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, message: 'Too many failed attempts. Please request a new token.' };
     }
 
+        shouldReset: true
     if (tokenRecord.token !== trimmedToken) {
       // Increment attempts
       tokenRecord.attempts += 1;

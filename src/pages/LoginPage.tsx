@@ -73,6 +73,15 @@ export default function LoginPage() {
       const result = await verifyToken(email, token);
       if (result.success) {
         toast.success(result.message);
+      } else if (result.shouldReset) {
+        toast.error(result.message);
+        // Auto-reset to email step after 3 failed attempts
+        setTimeout(() => {
+          setStep('email');
+          setToken('');
+          setTokenSent(false);
+          setTimeLeft(0);
+        }, 2000);
       } else {
         toast.error(result.message);
       }
