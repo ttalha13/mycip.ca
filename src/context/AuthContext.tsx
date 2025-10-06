@@ -185,6 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.log('⚠️ Supabase auth failed:', error.message);
+        // If Supabase returns a specific authentication error, return it immediately
+        if (error.message === 'Invalid login credentials' || error.message.includes('credentials')) {
+          return { error: new Error(error.message) };
+        }
       }
     } catch (error) {
       console.log('⚠️ Supabase not available, trying local auth');
