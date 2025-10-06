@@ -10,7 +10,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   sendToken: (email: string, name?: string) => Promise<{ success: boolean; message: string }>;
-  verifyToken: (email: string, token: string) => Promise<{ success: boolean; message: string }>;
+  verifyToken: (email: string, token: string) => Promise<{ success: boolean; message: string; shouldReset?: boolean }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const verifyToken = async (email: string, token: string): Promise<{ success: boolean; message: string }> => {
+  const verifyToken = async (email: string, token: string): Promise<{ success: boolean; message: string; shouldReset?: boolean }> => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedToken = token.trim();
     
