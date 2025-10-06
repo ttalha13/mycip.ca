@@ -182,7 +182,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Full error object:', JSON.stringify(error, null, 2));
         
         let errorMessage = 'Failed to send email. Please try again.';
-        if (error.message) {
+        
+        // Handle FunctionsHttpError specifically
+        if (error.name === 'FunctionsHttpError' && error.message === 'Edge Function returned a non-2xx status code') {
+          console.error('Edge Function error - checking context for details...');
+          
+          // Try to get more details from error context
+          let detailedMessage = 'Email service is currently unavailable. This could be due to:\n\n';
+          detailedMessage += '• Server configuration issues\n';
+          detailedMessage += '• Email service API key problems\n';
+          detailedMessage += '• Temporary service outage\n\n';
+          detailedMessage += 'Please try again in a few minutes or contact support if the problem persists.';
+          
+          // Check if there's additional context in the error
+          if (error.context && error.context.body) {
+            try {
+              const contextBody = typeof error.context.body === 'string' 
+                ? JSON.parse(error.context.body) 
+                : error.context.body;
+              
+              if (contextBody.error) {
+                detailedMessage = contextBody.error;
+                if (contextBody.details) {
+                  detailedMessage += '\n\nDetails: ' + contextBody.details;
+                }
+              }
+            } catch (parseError) {
+              console.error('Could not parse error context:', parseError);
+            }
+          }
+          
+          errorMessage = detailedMessage;
+        } else if (error.message) {
           errorMessage = error.message;
           console.error('Error message:', error.message);
         }
