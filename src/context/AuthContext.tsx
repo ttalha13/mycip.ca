@@ -98,6 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const sendToken = async (email: string, name?: string): Promise<{ success: boolean; message: string }> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!trimmedEmail) {
+      return { success: false, message: 'Please enter a valid email address' };
+    }
+
     // Generate new token
     const token = generateToken();
     const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
