@@ -18,18 +18,13 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  
+  NPM_FLAGS = "--production=false"
 # Environment Variables for Production
 [context.production.environment]
   NODE_ENV = "production"
+  URL = "https://mycip.ca"
   # Ensure Supabase environment variables are available
   # VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY should be set in Netlify dashboard
-
-# Custom Domain Configuration
-[context.production]
-  [context.production.environment]
-    URL = "https://mycip.ca"
-    NODE_ENV = "production"
 
 # Domain Configuration
 [[redirects]]
