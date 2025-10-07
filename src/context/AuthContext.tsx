@@ -194,6 +194,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Check for TMU email and provide specific guidance
+      if (trimmedEmail.includes('@torontomu.ca') || trimmedEmail.includes('@ryerson.ca')) {
+        return { 
+          success: true, 
+          message: `📧 Code sent to ${trimmedEmail}!\n\n⚠️ TMU Email Notice: Toronto Metropolitan University has strict email security. If you don't receive the email within 5 minutes:\n\n1. Check your SPAM/Junk folder\n2. Check TMU email quarantine\n3. Try using a personal email (Gmail, Yahoo, etc.)\n\nDelivery may be delayed due to university email policies.`
+        };
+      }
       return { 
         success: true, 
         message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.`
