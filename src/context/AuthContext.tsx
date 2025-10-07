@@ -175,11 +175,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       });
       
+      console.log('📡 Edge Function Response Status:', response.status);
+      console.log('📡 Edge Function Response Headers:', Object.fromEntries(response.headers.entries()));
+      
       const result = await response.json();
+      console.log('📡 Edge Function Response Body:', result);
 
       if (!response.ok) {
-        console.error('Email sending error:', result);
-        return { success: false, message: 'Failed to send verification code. Please try again.' };
+        console.error('❌ Email sending error:', result);
+        
+        // Provide more specific error messages
+        if (result.error && result.error.includes('domain')) {
+          return { success: false, message: 'Domain verification issue. Please contact support.' };
+        } else if (result.error && result.error.includes('API key')) {
+          return { success: false, message: 'Email service configuration issue. Please contact support.' };
+        } else {
+          return { success: false, message: `Failed to send verification code: ${result.error || 'Unknown error'}` };
+        }
       }
 
       return { 

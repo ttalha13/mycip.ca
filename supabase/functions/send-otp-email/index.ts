@@ -229,6 +229,8 @@ Having trouble? Contact us at @ttalha_13
 
     console.log('📧 Preparing to send email via Resend API...')
     console.log('🎯 Target email:', email)
+    console.log('🔍 Email validation check:', emailRegex.test(email))
+    console.log('🔍 Token validation check:', /^\d{6}$/.test(token))
 
     const emailPayload = {
       from: 'MyCIP <noreply@mycip.ca>',
@@ -242,6 +244,7 @@ Having trouble? Contact us at @ttalha_13
     console.log('📤 From:', emailPayload.from)
     console.log('📥 To:', emailPayload.to)
     console.log('📋 Subject:', emailPayload.subject)
+    console.log('🔑 Using API Key prefix:', RESEND_API_KEY.substring(0, 8) + '...')
 
     // Send email via Resend API
     console.log('🚀 Calling Resend API...')
@@ -256,6 +259,7 @@ Having trouble? Contact us at @ttalha_13
 
     console.log('📡 Resend API response status:', emailResponse.status)
     console.log('📡 Resend API response ok:', emailResponse.ok)
+    console.log('📡 Response headers:', Object.fromEntries(emailResponse.headers.entries()))
 
     const responseText = await emailResponse.text()
     console.log('📡 Resend API response body:', responseText)
