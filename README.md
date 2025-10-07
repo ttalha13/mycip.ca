@@ -38,9 +38,12 @@ Your trusted companion for navigating Canadian immigration pathways. Get expert 
 ## 🏗️ Architecture
 
 ### Authentication System
-- **Hybrid Approach**: Tries Supabase first, falls back to local storage
-- **User Preservation**: Maintains all existing Supabase users.
-- **Password Reset**: Works for both Supabase and local users
+- **Token-Based Authentication**: Email-based OTP system with 6-digit verification codes
+- **Hybrid Approach**: Tries Supabase first, falls back to local storage for offline functionality
+- **No Sign-Up Required**: Users authenticate directly with email + OTP token
+- **User Preservation**: Maintains all existing users across both Supabase and local storage
+- **Email Integration**: Custom Edge Function with Resend API for reliable email delivery
+- **Educational Email Support**: Special handling for university emails (TMU, etc.) with delivery guidance
 
 ### Database Schema
 - **User Profiles**: Comprehensive immigration profile data
