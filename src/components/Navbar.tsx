@@ -392,6 +392,7 @@ export default function Navbar() {
             </div>
             
             {/* Debug Sign Out Button - Remove in production */}
+            <button
               onClick={() => {
                 console.log('Force sign out triggered');
                 localStorage.clear();
