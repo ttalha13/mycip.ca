@@ -7,6 +7,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 if (import.meta.env.DEV) {
   console.log('Supabase URL:', supabaseUrl ? 'Present' : 'Missing');
   console.log('Supabase Anon Key:', supabaseAnonKey ? 'Present' : 'Missing');
+} else {
+  // Production logging (less verbose)
+  console.log('🔧 Production Mode - Supabase:', supabaseUrl ? '✅ Connected' : '❌ Missing URL');
 }
 
 // Create a safe Supabase client that handles all error cases
