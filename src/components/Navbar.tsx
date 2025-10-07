@@ -17,6 +17,19 @@ export default function Navbar() {
   const [flagLoaded, setFlagLoaded] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  // Prevent scroll when mobile menu is open
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showMobileMenu]);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollPos = window.scrollY;
@@ -309,14 +322,14 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {showMobileMenu && (
-          <div className="md:hidden pb-3 space-y-1">
+          <div className="md:hidden pb-3 space-y-1 bg-inherit border-t border-gray-200 dark:border-gray-700">
             <Link
               to="/"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
+              className={`flex items-center px-3 py-3 text-base font-medium ${
                 theme === 'dark' 
                   ? 'text-white hover:bg-gray-300/10' 
                   : 'text-gray-700 hover:bg-gray-200'
-              }`}
+              } transition-colors`}
               onClick={() => setShowMobileMenu(false)}
             >
               <Home className="h-5 w-5 inline-block mr-2" />
@@ -324,35 +337,36 @@ export default function Navbar() {
             </Link>
             <Link
               to="/contact"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
+              className={`flex items-center px-3 py-3 text-base font-medium ${
                 theme === 'dark' 
                   ? 'text-white hover:bg-gray-300/10' 
                   : 'text-gray-700 hover:bg-gray-200'
-              }`}
+              } transition-colors`}
               onClick={() => setShowMobileMenu(false)}
             >
               <Mail className="h-5 w-5 inline-block mr-2" />
               Contact
             </Link>
-            <div className="px-3 py-2">
+            <div className="px-3 py-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Theme:</span>
                 <div
                   onClick={toggleAutoMode}
-                  className={`theme-toggle flex items-center justify-center w-8 h-8 rounded-full ${
+                  className={`theme-toggle flex items-center justify-center w-10 h-10 rounded-full ${
                     theme === 'dark'
                       ? 'hover:bg-gray-300/10'
                       : 'hover:bg-gray-300/50'
-                  } ${isAutoMode ? 'ring-2 ring-purple-500' : ''}`}
+                  } ${isAutoMode ? 'ring-2 ring-purple-500' : ''} transition-colors`}
                 >
                   <Clock className={`h-4 w-4 ${isAutoMode ? 'text-purple-500' : 'text-gray-500'}`} />
                 </div>
                 <div
                   onClick={!isAutoMode ? toggleTheme : undefined}
-                  className={`theme-toggle flex items-center justify-center w-8 h-8 rounded-full ${
+                  className={`theme-toggle flex items-center justify-center w-10 h-10 rounded-full ${
                     theme === 'dark'
                       ? 'hover:bg-gray-300/10 text-yellow-300'
                       : 'hover:bg-gray-300/50 text-gray-700'
-                  } ${!isAutoMode ? 'ring-2 ring-purple-500' : ''}`}
+                  } ${!isAutoMode ? 'ring-2 ring-purple-500' : ''} transition-colors`}
                 >
                   {theme === 'dark' ? (
                     <Moon className="h-4 w-4" />
@@ -362,21 +376,22 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className={`w-full text-left px-3 py-2 rounded-md text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full flex items-center px-3 py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
                 theme === 'dark' 
                   ? 'text-white hover:bg-gray-300/10' 
                   : 'text-gray-700 hover:bg-gray-200'
-              }`}
+              } transition-colors`}
             >
               <LogOut className="h-5 w-5 inline-block mr-2" />
               {signingOut ? 'Signing out...' : 'Sign out'}
             </button>
+            </div>
             
             {/* Debug Sign Out Button - Remove in production */}
-            <button
               onClick={() => {
                 console.log('Force sign out triggered');
                 localStorage.clear();

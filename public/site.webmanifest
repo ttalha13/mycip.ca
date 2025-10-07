@@ -2,26 +2,32 @@
   "name": "MyCIP - Canadian Immigration Pathways",
   "short_name": "MyCIP",
   "description": "Your trusted companion for navigating Canadian immigration pathways",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#ef4444",
+  "background_color": "#ffffff",
+  "categories": ["education", "government", "productivity"],
+  "lang": "en-US",
   "icons": [
     {
       "src": "/mycip.png",
-      "sizes": "192x192 512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/mycip.png",
-      "sizes": "any",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/mycip.png",
-      "sizes": "144x144",
-      "type": "image/png"
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/mycip.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "theme_color": "#ef4444",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "start_url": "/"
+  ]
 }

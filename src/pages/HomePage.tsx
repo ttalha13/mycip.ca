@@ -110,22 +110,22 @@ export default function HomePage() {
               ${scrolled ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
             `}
           >
-            <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between">
+            <div className="p-4 sm:p-6 flex flex-col lg:flex-row items-center justify-between">
               <div className="flex-1 text-center sm:text-left mb-4 sm:mb-0">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-3 flex items-center justify-center sm:justify-start">
+                <h2 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-white mb-3 flex items-center justify-center sm:justify-start flex-wrap">
                   <Calculator className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3" />
                   Calculate Your CRS Score
                 </h2>
-                <p className="text-sm sm:text-base text-white/90 max-w-2xl">
+                <p className="text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed">
                   Find out your Comprehensive Ranking System (CRS) score for Express Entry. 
                   This score determines your position in the Express Entry pool and your chances of receiving an Invitation to Apply (ITA).
                 </p>
-                <div className="mt-3 sm:mt-4 inline-flex items-center text-white font-semibold hover:underline">
+                <div className="mt-3 sm:mt-4 inline-flex items-center text-white font-semibold hover:underline text-sm sm:text-base">
                   Calculate Now
                   <span className="ml-2">→</span>
                 </div>
               </div>
-              <div className="hidden lg:block relative">
+              <div className="hidden lg:block relative flex-shrink-0">
                 <div className={`w-24 h-24 transition-opacity duration-300 ${flagLoaded ? 'opacity-100' : 'opacity-0'}`}>
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/d/d9/Flag_of_Canada_%28Pantone%29.svg"
@@ -145,7 +145,7 @@ export default function HomePage() {
           </a>
         </div>
 
-        <div className="text-center mb-6 sm:mb-10">
+        <div className="text-center mb-6 sm:mb-8 lg:mb-10 px-2">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
             <span className={`${theme === 'light' ? 'text-red-600' : 'text-gray-100'}`}>C</span>
             <span className="text-gray-900 dark:text-gray-100">anadian </span>
@@ -154,7 +154,7 @@ export default function HomePage() {
             <span className={`${theme === 'light' ? 'text-red-600' : 'text-gray-100'}`}>P</span>
             <span className="text-gray-900 dark:text-gray-100">athways</span>
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2 sm:px-4">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
             Explore Permanent Residency options across Canada's provinces. Find official immigration programs and start your journey to becoming a permanent resident.
           </p>
         </div>

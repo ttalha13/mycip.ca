@@ -108,7 +108,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center py-8 px-4 sm:py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="absolute inset-0">
         <div className="absolute inset-0 w-1/2 bg-red-50 dark:bg-red-900/20" />
         <div className="absolute inset-0 left-1/2 bg-blue-50 dark:bg-blue-900/20" />
@@ -116,7 +116,7 @@ export default function LoginPage() {
       
       <Toaster position="top-center" />
       
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+      <div className="mx-auto w-full max-w-md relative z-10">
         <div className="flex justify-center">
           <MapPin className="h-12 w-12 text-red-400 animate-bounce" />
         </div>
@@ -128,11 +128,11 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 py-8 px-4 shadow-2xl sm:rounded-lg sm:px-10">
+      <div className="mt-6 mx-auto w-full max-w-md relative z-10">
+        <div className="backdrop-blur-lg bg-white/90 dark:bg-gray-800/90 py-6 px-4 shadow-2xl rounded-lg sm:py-8 sm:px-8">
           
           {/* Step Indicator */}
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
             <div className="flex items-center space-x-4">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
                 step === 'email' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
@@ -149,7 +149,7 @@ export default function LoginPage() {
           </div>
 
           {step === 'email' ? (
-            <form onSubmit={handleSendToken} className="space-y-6">
+            <form onSubmit={handleSendToken} className="space-y-4 sm:space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email Address *
@@ -161,7 +161,7 @@ export default function LoginPage() {
                   <input
                     type="email"
                     required
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
@@ -179,7 +179,7 @@ export default function LoginPage() {
                   </div>
                   <input
                     type="text"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
@@ -190,7 +190,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300 text-base font-medium"
               >
                 {isSubmitting ? (
                   <Loader2 className="animate-spin h-5 w-5" />
@@ -200,7 +200,7 @@ export default function LoginPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyToken} className="space-y-6">
+            <form onSubmit={handleVerifyToken} className="space-y-4 sm:space-y-6">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-2">
                   <Clock className="h-5 w-5 text-blue-500 mr-2" />
@@ -222,7 +222,7 @@ export default function LoginPage() {
                     type="text"
                     required
                     maxLength={6}
-                    className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-2xl font-mono tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-xl sm:text-2xl font-mono tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={token}
                     onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
@@ -233,7 +233,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || token.length !== 6}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-white bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-300 text-base font-medium"
               >
                 {isSubmitting ? (
                   <Loader2 className="animate-spin h-5 w-5" />
@@ -242,11 +242,11 @@ export default function LoginPage() {
                 )}
               </button>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 >
                   ← Use different email
                 </button>
@@ -254,7 +254,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => handleSendToken(new Event('submit') as any)}
                   disabled={isSubmitting}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 disabled:opacity-50"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 disabled:opacity-50 transition-colors"
                 >
                   Resend token
                 </button>

@@ -140,7 +140,7 @@ Submitted at: ${new Date().toLocaleString()}`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden perspective-container">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 relative overflow-hidden perspective-container">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/10 rounded-full filter blur-3xl animate-float-orb" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-red-500/10 rounded-full filter blur-3xl animate-float-orb" style={{ animationDelay: '2s' }} />
@@ -149,30 +149,30 @@ Submitted at: ${new Date().toLocaleString()}`;
       
       <Toaster position="top-center" />
       <div className="max-w-5xl mx-auto relative z-10">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-white mb-2">Contact Us</h2>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">Contact Us</h2>
           <p className="text-gray-400">
             Have questions? We're here to help.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 sm:mb-12">
           {/* Contact Information */}
-          <div className="backdrop-blur-lg bg-white/5 rounded-lg shadow-2xl p-6 sm:p-8 depth-layer">
-            <h3 className="text-xl font-semibold text-white mb-6">Get in Touch</h3>
+          <div className="backdrop-blur-lg bg-white/5 rounded-lg shadow-2xl p-4 sm:p-6 lg:p-8 depth-layer">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">Get in Touch</h3>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Social Media Section */}
               <div className="flex items-start space-x-4">
                 <MessageSquare className="w-6 h-6 text-red-400 mt-1" />
                 <div>
                   <p className="text-white font-medium mb-3">Connect With Us</p>
-                  <div className="flex space-x-4">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                     <a
                       href="https://www.instagram.com/ttalha_13/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-gray-300 hover:text-red-400 transition-colors"
+                      className="flex items-center space-x-2 text-gray-300 hover:text-red-400 transition-colors text-sm sm:text-base"
                     >
                       <Instagram className="w-5 h-5" />
                       <span>Instagram</span>
@@ -181,7 +181,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                       href="https://www.linkedin.com/in/talha-806869188/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors"
+                      className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors text-sm sm:text-base"
                     >
                       <Linkedin className="w-5 h-5" />
                       <span>LinkedIn</span>
@@ -194,7 +194,7 @@ Submitted at: ${new Date().toLocaleString()}`;
               </div>
 
               {/* Remote Work Message */}
-              <div className="border-t border-gray-700 pt-6 mt-6">
+              <div className="border-t border-gray-700 pt-4 mt-4 sm:pt-6 sm:mt-6">
                 <div className="bg-gradient-to-r from-purple-500/10 to-red-500/10 rounded-lg p-4 backdrop-blur-sm">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0 mt-1">
@@ -206,7 +206,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                       <h4 className="text-white font-medium mb-2 bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
                         Professional Immigration Guidance
                       </h4>
-                      <p className="text-gray-300 text-sm leading-relaxed">
+                      <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">
                         Get expert guidance on Canadian immigration pathways, document preparation, and application strategies. We're here to help you navigate your journey to Canada successfully! 🇨🇦✨
                       </p>
                     </div>
@@ -217,8 +217,8 @@ Submitted at: ${new Date().toLocaleString()}`;
           </div>
 
           <div className="backdrop-blur-lg bg-white/5 rounded-lg shadow-2xl depth-layer">
-            <div className="p-6 sm:p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="p-4 sm:p-6 lg:p-8">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div className="group">
                   <label className="block text-sm font-medium text-gray-300 mb-2 group-hover:text-white transition-colors">
                     <User className="inline-block w-4 h-4 mr-2 mb-1 icon-bounce" />
@@ -227,7 +227,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus text-base"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     disabled={submitting}
@@ -242,7 +242,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                   <input
                     type="email"
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus text-base"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     disabled={submitting}
@@ -256,7 +256,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                   </label>
                   <select
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus text-base"
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value })}
                     disabled={submitting}
@@ -278,7 +278,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                   <input
                     type="tel"
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus text-base"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     placeholder="+1 (123) 456-7890"
@@ -294,7 +294,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                   <textarea
                     rows={4}
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus resize-none"
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white placeholder-gray-500 transition-all duration-300 transform hover:translate-y-[-2px] focus:translate-y-[-2px] input-focus resize-none text-base"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     disabled={submitting}
@@ -310,7 +310,7 @@ Submitted at: ${new Date().toLocaleString()}`;
                     hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 
                     focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 
                     disabled:cursor-not-allowed transform hover:scale-105 hover:rotate-1 
-                    transition-all duration-300 button-pulse
+                    transition-all duration-300 button-pulse text-base font-medium
                     ${submitting ? 'opacity-75 cursor-not-allowed' : ''}
                   `}
                 >

@@ -4,6 +4,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Cross-browser compatibility fixes */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* iOS Safari fixes */
+input, textarea, select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+/* Prevent zoom on iOS */
+input[type="email"], 
+input[type="tel"], 
+input[type="text"], 
+textarea {
+  font-size: 16px;
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  .hover\:shadow-xl:hover {
+    box-shadow: none;
+  }
+}
+
 /* Theme toggle styles */
 .theme-toggle {
   -webkit-tap-highlight-color: transparent;

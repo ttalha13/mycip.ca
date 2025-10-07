@@ -7,9 +7,14 @@ export default defineConfig(({ mode }) => ({
   define: {
     __DEV__: mode === 'development',
   },
+  esbuild: {
+    target: 'es2015'
+  },
   build: {
     sourcemap: mode === 'development',
     minify: mode === 'production' ? 'esbuild' : false,
+    target: 'es2015',
+    cssTarget: 'chrome61',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -24,6 +29,7 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     exclude: ['lucide-react'],
+    include: ['react', 'react-dom', 'react-router-dom']
   },
   server: {
     port: 3000,
