@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 interface EmailRequest {
@@ -13,7 +13,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   console.log('🚀 Edge Function started - send-otp-email')
   console.log('📝 Request method:', req.method)
   console.log('🌐 Request URL:', req.url)
