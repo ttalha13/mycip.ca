@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Supabase Auth Functions
   const sendTokenSupabase = async (email: string, name?: string): Promise<{ success: boolean; message: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
-    
+
     if (!trimmedEmail) {
       return { success: false, message: 'Please enter a valid email address' };
     }
@@ -149,17 +149,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Generate 6-digit token
       const token = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Store token temporarily in localStorage for verification
-      const tokenData = {
-        email: trimmedEmail,
-        token,
-        name: name || '',
-        expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
-        attempts: 0
-      };
-      
-      localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+
+      // Store token in Supabase database
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+
+      // Delete any existing OTP tokens for this email
+      await supabase.from('otp_tokens').delete().eq('email', trimmedEmail);
+
+      // Insert new OTP token
+      const { error: insertError } = await supabase
+        .from('otp_tokens')
+        .insert({
+          email: trimmedEmail,
+          token,
+          name: name || null,
+          expires_at: expiresAt,
+          attempts: 0,
+          verified: false
+        });
+
+      if (insertError) {
+        console.error('Failed to store OTP in database:', insertError);
+        // Fallback to localStorage
+        const tokenData = {
+          email: trimmedEmail,
+          token,
+          name: name || '',
+          expiresAt: Date.now() + (10 * 60 * 1000),
+          attempts: 0
+        };
+        localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+      }
       
       // Check if we're in production and Supabase URL is available
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -275,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyTokenSupabase = async (email: string, token: string): Promise<{ success: boolean; message: string; shouldReset?: boolean }> => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedToken = token.trim();
-    
+
     if (!trimmedEmail || !trimmedToken) {
       return { success: false, message: 'Please enter both email and verification code' };
     }
@@ -285,55 +305,104 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Check our custom token first
-      const storedTokenData = localStorage.getItem(`mycip_token_${trimmedEmail}`);
-      
-      if (storedTokenData) {
-        const tokenData = JSON.parse(storedTokenData);
-        
-        // Check if token expired
-        if (tokenData.expiresAt <= Date.now()) {
-          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
-          return { success: false, message: 'Code has expired. Please request a new one.', shouldReset: true };
-        }
-        
-        // Check attempts
-        if (tokenData.attempts >= 3) {
-          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
-          return { success: false, message: 'Too many failed attempts. Please request a new code.', shouldReset: true };
-        }
-        
-        // Verify token
-        if (tokenData.token === trimmedToken) {
-          // Success - create user session
-          localStorage.removeItem(`mycip_token_${trimmedEmail}`);
-          
-          // Create user session
-          const userData = {
-            email: trimmedEmail,
-            id: Date.now().toString(),
-            name: tokenData.name
-          };
-          
-          setUser(userData);
-          localStorage.setItem(LOCAL_STORAGE_FALLBACK.CURRENT_USER_KEY, JSON.stringify(userData));
-          
-          return { success: true, message: 'Successfully signed in!' };
-        } else {
-          // Wrong token
-          tokenData.attempts += 1;
-          localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
-          const attemptsLeft = 3 - tokenData.attempts;
-          return { 
-            success: false, 
-            message: `Invalid code. ${attemptsLeft} attempts remaining.`,
-            shouldReset: attemptsLeft === 0
-          };
-        }
+      // First, try to get OTP from Supabase
+      const { data: otpRecord, error: fetchError } = await supabase
+        .from('otp_tokens')
+        .select('*')
+        .eq('email', trimmedEmail)
+        .eq('verified', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching OTP from database:', fetchError);
+        // Fallback to localStorage
+        return verifyTokenLocal(email, token);
       }
-      
-      // No stored token found
-      return { success: false, message: 'No valid code found. Please request a new one.', shouldReset: true };
+
+      if (!otpRecord) {
+        // Try localStorage fallback
+        const storedTokenData = localStorage.getItem(`mycip_token_${trimmedEmail}`);
+        if (storedTokenData) {
+          return verifyTokenLocal(email, token);
+        }
+        return { success: false, message: 'No valid code found. Please request a new one.', shouldReset: true };
+      }
+
+      // Check if token expired
+      if (new Date(otpRecord.expires_at) <= new Date()) {
+        await supabase.from('otp_tokens').delete().eq('id', otpRecord.id);
+        return { success: false, message: 'Code has expired. Please request a new one.', shouldReset: true };
+      }
+
+      // Check attempts
+      if (otpRecord.attempts >= 3) {
+        await supabase.from('otp_tokens').delete().eq('id', otpRecord.id);
+        return { success: false, message: 'Too many failed attempts. Please request a new code.', shouldReset: true };
+      }
+
+      // Verify token
+      if (otpRecord.token === trimmedToken) {
+        // Success - mark as verified and create user
+        await supabase
+          .from('otp_tokens')
+          .update({ verified: true })
+          .eq('id', otpRecord.id);
+
+        // Create or update user profile in user_profiles table
+        const userId = crypto.randomUUID();
+
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: userId,
+            email: trimmedEmail,
+            full_name: otpRecord.name || null,
+            email_verified: true,
+            last_login_at: new Date().toISOString(),
+            login_count: 1
+          }, {
+            onConflict: 'email',
+            ignoreDuplicates: false
+          });
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+        }
+
+        // Get the user profile to set in state
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id, email, full_name')
+          .eq('email', trimmedEmail)
+          .maybeSingle();
+
+        const userData: User = {
+          email: trimmedEmail,
+          id: profile?.id || userId,
+          name: profile?.full_name || otpRecord.name
+        };
+
+        setUser(userData);
+        localStorage.setItem(LOCAL_STORAGE_FALLBACK.CURRENT_USER_KEY, JSON.stringify(userData));
+
+        return { success: true, message: 'Successfully signed in!' };
+      } else {
+        // Wrong token - increment attempts
+        const newAttempts = otpRecord.attempts + 1;
+        await supabase
+          .from('otp_tokens')
+          .update({ attempts: newAttempts })
+          .eq('id', otpRecord.id);
+
+        const attemptsLeft = 3 - newAttempts;
+        return {
+          success: false,
+          message: `Invalid code. ${attemptsLeft} attempts remaining.`,
+          shouldReset: attemptsLeft === 0
+        };
+      }
       
     } catch (error: any) {
       console.error('Unexpected error verifying token:', error);
