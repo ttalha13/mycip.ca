@@ -27,15 +27,16 @@ serve(async (req) => {
   try {
     console.log('🔍 Checking environment variables...')
     
-    // Check if RESEND_API_KEY is available
+    // Check both Resend and SendGrid API keys
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+    const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY')
     
-    if (!RESEND_API_KEY) {
-      console.error('❌ RESEND_API_KEY environment variable is not set')
+    if (!RESEND_API_KEY && !SENDGRID_API_KEY) {
+      console.error('❌ Neither RESEND_API_KEY nor SENDGRID_API_KEY environment variables are set')
       return new Response(
         JSON.stringify({ 
           error: 'Email service not configured', 
-          details: 'RESEND_API_KEY environment variable is missing',
+          details: 'No email service API keys found',
           debug: 'Check Supabase Dashboard → Edge Functions → Secrets',
           timestamp: new Date().toISOString()
         }),
@@ -46,26 +47,9 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ RESEND_API_KEY found')
-    console.log('🔑 API Key length:', RESEND_API_KEY.length)
-    console.log('🔑 API Key starts with:', RESEND_API_KEY.substring(0, 3) + '...')
-
-    // Validate API key format
-    if (!RESEND_API_KEY.startsWith('re_')) {
-      console.error('❌ Invalid RESEND_API_KEY format - should start with "re_"')
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid API key format', 
-          details: 'Resend API key should start with "re_"',
-          debug: `Current key starts with: ${RESEND_API_KEY.substring(0, 3)}`,
-          timestamp: new Date().toISOString()
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    // Prefer Resend, fallback to SendGrid
+    const useResend = !!RESEND_API_KEY
+    console.log(`📧 Using email service: ${useResend ? 'Resend' : 'SendGrid'}`)
 
     console.log('📦 Parsing request body...')
     let requestBody
@@ -227,100 +211,90 @@ Having trouble? Contact us at @ttalha_13
 © ${new Date().getFullYear()} MyCIP - Canadian Immigration Pathways
     `
 
-    console.log('📧 Preparing to send email via Resend API...')
+    console.log('📧 Preparing to send email...')
     console.log('🎯 Target email:', email)
-    console.log('🔍 Email validation check:', emailRegex.test(email))
-    console.log('🔍 Token validation check:', /^\d{6}$/.test(token))
 
-    const emailPayload = {
-      from: 'MyCIP <noreply@mycip.ca>',
-      to: [email],
-      subject: `Your MyCIP Login Code: ${token}`,
-      html: emailHtml,
-      text: emailText,
-    }
-
-    console.log('📦 Email payload prepared')
-    console.log('📤 From:', emailPayload.from)
-    console.log('📥 To:', emailPayload.to)
-    console.log('📋 Subject:', emailPayload.subject)
-    console.log('🔑 Using API Key prefix:', RESEND_API_KEY.substring(0, 8) + '...')
-
-    // Send email via Resend API
-    console.log('🚀 Calling Resend API...')
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailPayload),
-    })
-
-    console.log('📡 Resend API response status:', emailResponse.status)
-    console.log('📡 Resend API response ok:', emailResponse.ok)
-    console.log('📡 Response headers:', Object.fromEntries(emailResponse.headers.entries()))
-
-    const responseText = await emailResponse.text()
-    console.log('📡 Resend API response body:', responseText)
-
-    if (!emailResponse.ok) {
-      console.error('❌ Email sending failed with status:', emailResponse.status)
-      console.error('❌ Response body:', responseText)
-      
-      // Parse error response if possible
-      let errorMessage = 'Failed to send email'
-      let errorDetails = responseText
-      
-      try {
-        const errorData = JSON.parse(responseText)
-        errorMessage = errorData.message || errorData.error || errorMessage
-        errorDetails = JSON.stringify(errorData, null, 2)
-        console.error('❌ Parsed error data:', errorData)
-      } catch (e) {
-        console.log('📝 Could not parse error response as JSON')
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Email sending failed', 
-          details: errorMessage,
-          status: emailResponse.status,
-          debug: {
-            resendStatus: emailResponse.status,
-            resendResponse: errorDetails,
-            apiKeyLength: RESEND_API_KEY.length,
-            apiKeyPrefix: RESEND_API_KEY.substring(0, 5),
-            timestamp: new Date().toISOString()
-          }
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
+    let emailResponse
     let result
-    try {
-      result = JSON.parse(responseText)
-      console.log('✅ Email sent successfully:', result)
-    } catch (parseError) {
-      console.error('❌ Could not parse success response:', parseError)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Unexpected response format from email service',
-          debug: {
-            responseText,
-            parseError: parseError.message,
-            timestamp: new Date().toISOString()
-          }
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+
+    if (useResend) {
+      // Try Resend first
+      console.log('🚀 Attempting to send via Resend API...')
+      
+      const emailPayload = {
+        from: 'MyCIP <noreply@mycip.ca>',
+        to: [email],
+        subject: `Your MyCIP Login Code: ${token}`,
+        html: emailHtml,
+        text: emailText,
+      }
+
+      try {
+        emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emailPayload),
+        })
+
+        console.log('📡 Resend API response status:', emailResponse.status)
+        
+        if (emailResponse.ok) {
+          const responseText = await emailResponse.text()
+          result = JSON.parse(responseText)
+          console.log('✅ Email sent successfully via Resend:', result)
+        } else {
+          throw new Error(`Resend failed with status ${emailResponse.status}`)
         }
-      )
+      } catch (resendError) {
+        console.log('⚠️ Resend failed, trying SendGrid fallback...', resendError)
+        
+        if (SENDGRID_API_KEY) {
+          // Fallback to SendGrid
+          const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
+          const sendgrid = new SendGrid(SENDGRID_API_KEY)
+          
+          const sgEmail = {
+            to: email,
+            from: {
+              email: 'abutalha7778@gmail.com',
+              name: 'MyCIP'
+            },
+            subject: `Your MyCIP Login Code: ${token}`,
+            text: emailText,
+            html: emailHtml,
+          }
+
+          console.log('🚀 Sending via SendGrid...')
+          await sendgrid.send(sgEmail)
+          console.log('✅ Email sent successfully via SendGrid')
+          result = { id: 'sendgrid-' + Date.now() }
+        } else {
+          throw resendError
+        }
+      }
+    } else {
+      // Use SendGrid directly
+      console.log('🚀 Sending via SendGrid...')
+      const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
+      const sendgrid = new SendGrid(SENDGRID_API_KEY)
+      
+      const sgEmail = {
+        to: email,
+        from: {
+          email: 'abutalha7778@gmail.com',
+          name: 'MyCIP'
+        },
+        subject: `Your MyCIP Login Code: ${token}`,
+        text: emailText,
+        html: emailHtml,
+      }
+
+      await sendgrid.send(sgEmail)
+      console.log('✅ Email sent successfully via SendGrid')
+      result = { id: 'sendgrid-' + Date.now() }
     }
 
     console.log('🎉 Function completed successfully')
@@ -329,9 +303,8 @@ Having trouble? Contact us at @ttalha_13
         success: true, 
         message: 'Email sent successfully',
         emailId: result.id,
+        service: useResend ? 'resend' : 'sendgrid',
         debug: {
-          resendStatus: emailResponse.status,
-          emailId: result.id,
           timestamp: new Date().toISOString()
         }
       }),
