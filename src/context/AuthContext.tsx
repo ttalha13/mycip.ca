@@ -327,17 +327,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('🔍 Token to verify:', trimmedToken);
 
       // First, try to get OTP from Supabase
-      const { data: otpRecord, error: fetchError } = await supabase
+      const { data: otpRecords, error: fetchError } = await supabase
         .from('otp_tokens')
         .select('*')
         .eq('email', trimmedEmail)
         .eq('verified', false)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      console.log('📦 OTP Record from database:', otpRecord);
+      console.log('📦 OTP Records from database:', otpRecords);
+      console.log('📊 Number of records found:', otpRecords?.length || 0);
       console.log('❌ Fetch error:', fetchError);
+
+      const otpRecord = otpRecords && otpRecords.length > 0 ? otpRecords[0] : null;
 
       if (fetchError) {
         console.error('Error fetching OTP from database:', fetchError);
