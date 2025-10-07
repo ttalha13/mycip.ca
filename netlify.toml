@@ -16,12 +16,6 @@
 [build.processing.html]
   pretty_urls = true
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = []}
-
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--production=false"
@@ -34,7 +28,9 @@
 
 # Custom Domain Configuration
 [context.production]
-  environment = { URL = "https://mycip.ca", NODE_ENV = "production" }
+  [context.production.environment]
+    URL = "https://mycip.ca"
+    NODE_ENV = "production"
 
 # Domain Configuration
 [[redirects]]
@@ -60,26 +56,31 @@
   from = "/province/*"
   to = "/index.html"
   status = 200
-  conditions = {Role = []}
 
 [[redirects]]
   from = "/contact"
   to = "/index.html"
   status = 200
-  conditions = {Role = []}
 
 [[redirects]]
   from = "/login"
   to = "/index.html"
   status = 200
-  conditions = {Role = []}
 
-# Remove the problematic admin/country condition from catch-all
+# Catch-all for SPA (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [context.deploy-preview]
-  environment = { NODE_ENV = "development" }
+  [context.deploy-preview.environment]
+    NODE_ENV = "development"
 
 [context.branch-deploy]
-  environment = { NODE_ENV = "development" }
+  [context.branch-deploy.environment]
+    NODE_ENV = "development"
+
 # Security Headers
 [[headers]]
   for = "/*"
@@ -89,7 +90,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
-    Content-Security-Policy = """
+    Content-Security-Policy = '''
       default-src 'none';
       script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
@@ -100,17 +101,17 @@
       form-action 'self';
       base-uri 'self';
       upgrade-insecure-requests;
-    """
+    '''
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Cross-Origin-Resource-Policy = "same-origin"
     Feature-Policy = "camera 'none'; microphone 'none'; geolocation 'none'"
     Expect-CT = "max-age=86400, enforce"
-    NEL = """
+    NEL = '''
       {"report_to": "default", "max_age": 31536000, "include_subdomains": true}
-    """
-    Report-To = """
+    '''
+    Report-To = '''
       {"group": "default", "max_age": 31536000, "endpoints": [{"url": "https://mycip.ca/_report"}], "include_subdomains": true}
-    """
+    '''
 
 # Cache static assets
 [[headers]]
