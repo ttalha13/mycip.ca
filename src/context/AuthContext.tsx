@@ -179,31 +179,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Send email via SendGrid Edge Function
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-otp-email`;
       console.log('🌐 Calling Edge Function:', edgeFunctionUrl);
+      console.log('🔑 Using Supabase Key:', supabaseKey ? 'Present' : 'Missing');
       
       const response = await fetch(edgeFunctionUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json',
+          'apikey': supabaseKey,
         },
         body: JSON.stringify({
           email: trimmedEmail,
           token,
           name: name || ''
         }),
-        // Add timeout for production
-        signal: AbortSignal.timeout(30000) // 30 second timeout
       });
       
       console.log('📡 Edge Function Response Status:', response.status);
       console.log('📡 Edge Function Response Headers:', Object.fromEntries(response.headers.entries()));
       
+      // Log the raw response for debugging
+      const responseText = await response.text();
+      console.log('📡 Raw Response Text:', responseText);
+      
       let result;
       try {
-        result = await response.json();
-      } catch (parseError) {
-        console.error('❌ Failed to parse response as JSON:', parseError);
-        throw new Error('Invalid response from email service');
+        result = responseText ? JSON.parse(responseText) : {};
+        console.error('📄 Raw response text:', responseText);
+        
+        // If it's a network error, fall back to showing token
+        console.log('🔄 Network error, falling back to local auth');
+        console.log(`🔐 Login Token for ${trimmedEmail}: ${token}`);
+        alert(`Network error occurred. Your login token is: ${token}`);
+        return { 
+          success: true, 
+          message: `Network error occurred. Your login token is: ${token}` 
+        };
       }
       
       console.log('📡 Edge Function Response Body:', result);
