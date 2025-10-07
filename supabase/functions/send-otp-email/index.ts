@@ -25,16 +25,16 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🔍 Checking SendGrid API key...')
+    console.log('🔍 Checking Resend API key...')
     
-    const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY')
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     
-    if (!SENDGRID_API_KEY) {
-      console.error('❌ SENDGRID_API_KEY environment variable not set')
+    if (!RESEND_API_KEY) {
+      console.error('❌ RESEND_API_KEY environment variable not set')
       return new Response(
         JSON.stringify({ 
           error: 'Email service not configured', 
-          details: 'SendGrid API key missing',
+          details: 'Resend API key missing',
           debug: 'Check Supabase Dashboard → Edge Functions → Secrets',
           timestamp: new Date().toISOString()
         }),
@@ -45,7 +45,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ SendGrid API key found')
+    console.log('✅ Resend API key found')
 
     console.log('📦 Parsing request body...')
     let requestBody
@@ -207,36 +207,62 @@ Having trouble? Contact us at @ttalha_13
 © ${new Date().getFullYear()} MyCIP - Canadian Immigration Pathways
     `
 
-    console.log('📧 Preparing to send email via SendGrid...')
+    console.log('📧 Preparing to send email via Resend...')
     console.log('🎯 Target email:', email)
 
-    // Import SendGrid
-    const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
-    const sendgrid = new SendGrid(SENDGRID_API_KEY)
-    
-    const sgEmail = {
-      to: email,
-      from: {
-        email: 'abutalha7778@gmail.com',
-        name: 'MyCIP'
+    // Send email via Resend API
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
-      subject: `Your MyCIP Login Code: ${token}`,
-      text: emailText,
-      html: emailHtml,
+      body: JSON.stringify({
+        from: 'MyCIP <noreply@mycip.ca>',
+        to: [email],
+        subject: `Your MyCIP Login Code: ${token}`,
+        text: emailText,
+        html: emailHtml,
+      }),
+    })
+
+    console.log('📡 Resend Response Status:', resendResponse.status)
+    console.log('📡 Resend Response Headers:', Object.fromEntries(resendResponse.headers.entries()))
+
+    let resendResult
+    try {
+      resendResult = await resendResponse.json()
+    } catch (parseError) {
+      console.error('❌ Failed to parse Resend response as JSON:', parseError)
+      throw new Error('Invalid response from email service')
     }
 
-    console.log('🚀 Sending via SendGrid...')
-    await sendgrid.send(sgEmail)
-    console.log('✅ Email sent successfully via SendGrid')
+    console.log('📡 Resend Response Body:', resendResult)
+
+    if (!resendResponse.ok) {
+      console.error('❌ Resend API error:', resendResult)
+      throw new Error(`Resend API error: ${resendResult.message || 'Unknown error'}`)
+    }
+
+    console.log('✅ Email sent successfully via Resend')
+
+    // Check for TMU email and provide specific guidance
+    if (email.includes('@torontomu.ca') || email.includes('@ryerson.ca')) {
+      return { 
+        success: true, 
+        message: `📧 Code sent to ${email}!\n\n⚠️ TMU Email Notice: Toronto Metropolitan University has strict email security. If you don't receive the email within 5 minutes:\n\n1. Check your SPAM/Junk folder\n2. Check TMU email quarantine\n3. Try using a personal email (Gmail, Yahoo, etc.)\n\nDelivery may be delayed due to university email policies.`
+      };
+    }
 
     console.log('🎉 Function completed successfully')
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Email sent successfully',
-        service: 'sendgrid',
+        service: 'resend',
         debug: {
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          messageId: resendResult.id
         }
       }),
       { 
