@@ -25,18 +25,16 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🔍 Checking environment variables...')
+    console.log('🔍 Checking SendGrid API key...')
     
-    // Check both Resend and SendGrid API keys
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY')
     
-    if (!RESEND_API_KEY && !SENDGRID_API_KEY) {
-      console.error('❌ Neither RESEND_API_KEY nor SENDGRID_API_KEY environment variables are set')
+    if (!SENDGRID_API_KEY) {
+      console.error('❌ SENDGRID_API_KEY environment variable not set')
       return new Response(
         JSON.stringify({ 
           error: 'Email service not configured', 
-          details: 'No email service API keys found',
+          details: 'SendGrid API key missing',
           debug: 'Check Supabase Dashboard → Edge Functions → Secrets',
           timestamp: new Date().toISOString()
         }),
@@ -47,9 +45,7 @@ serve(async (req) => {
       )
     }
 
-    // Prefer Resend, fallback to SendGrid
-    const useResend = !!RESEND_API_KEY
-    console.log(`📧 Using email service: ${useResend ? 'Resend' : 'SendGrid'}`)
+    console.log('✅ SendGrid API key found')
 
     console.log('📦 Parsing request body...')
     let requestBody
@@ -211,99 +207,34 @@ Having trouble? Contact us at @ttalha_13
 © ${new Date().getFullYear()} MyCIP - Canadian Immigration Pathways
     `
 
-    console.log('📧 Preparing to send email...')
+    console.log('📧 Preparing to send email via SendGrid...')
     console.log('🎯 Target email:', email)
 
-    let emailResponse
-    let result
-
-    if (useResend) {
-      // Try Resend first
-      console.log('🚀 Attempting to send via Resend API...')
-      
-      const emailPayload = {
-        from: 'MyCIP <noreply@mycip.ca>',
-        to: [email],
-        subject: `Your MyCIP Login Code: ${token}`,
-        html: emailHtml,
-        text: emailText,
-      }
-
-      try {
-        emailResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(emailPayload),
-        })
-
-        console.log('📡 Resend API response status:', emailResponse.status)
-        
-        if (emailResponse.ok) {
-          const responseText = await emailResponse.text()
-          result = JSON.parse(responseText)
-          console.log('✅ Email sent successfully via Resend:', result)
-        } else {
-          throw new Error(`Resend failed with status ${emailResponse.status}`)
-        }
-      } catch (resendError) {
-        console.log('⚠️ Resend failed, trying SendGrid fallback...', resendError)
-        
-        if (SENDGRID_API_KEY) {
-          // Fallback to SendGrid
-          const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
-          const sendgrid = new SendGrid(SENDGRID_API_KEY)
-          
-          const sgEmail = {
-            to: email,
-            from: {
-              email: 'abutalha7778@gmail.com',
-              name: 'MyCIP'
-            },
-            subject: `Your MyCIP Login Code: ${token}`,
-            text: emailText,
-            html: emailHtml,
-          }
-
-          console.log('🚀 Sending via SendGrid...')
-          await sendgrid.send(sgEmail)
-          console.log('✅ Email sent successfully via SendGrid')
-          result = { id: 'sendgrid-' + Date.now() }
-        } else {
-          throw resendError
-        }
-      }
-    } else {
-      // Use SendGrid directly
-      console.log('🚀 Sending via SendGrid...')
-      const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
-      const sendgrid = new SendGrid(SENDGRID_API_KEY)
-      
-      const sgEmail = {
-        to: email,
-        from: {
-          email: 'abutalha7778@gmail.com',
-          name: 'MyCIP'
-        },
-        subject: `Your MyCIP Login Code: ${token}`,
-        text: emailText,
-        html: emailHtml,
-      }
-
-      await sendgrid.send(sgEmail)
-      console.log('✅ Email sent successfully via SendGrid')
-      result = { id: 'sendgrid-' + Date.now() }
+    // Import SendGrid
+    const { SendGrid } = await import('https://deno.land/x/sendgrid@0.0.3/mod.ts')
+    const sendgrid = new SendGrid(SENDGRID_API_KEY)
+    
+    const sgEmail = {
+      to: email,
+      from: {
+        email: 'abutalha7778@gmail.com',
+        name: 'MyCIP'
+      },
+      subject: `Your MyCIP Login Code: ${token}`,
+      text: emailText,
+      html: emailHtml,
     }
+
+    console.log('🚀 Sending via SendGrid...')
+    await sendgrid.send(sgEmail)
+    console.log('✅ Email sent successfully via SendGrid')
 
     console.log('🎉 Function completed successfully')
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Email sent successfully',
-        emailId: result.id,
-        service: useResend ? 'resend' : 'sendgrid',
+        service: 'sendgrid',
         debug: {
           timestamp: new Date().toISOString()
         }

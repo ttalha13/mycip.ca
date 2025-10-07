@@ -166,17 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
       if (!supabaseUrl || !supabaseKey) {
-        console.error('❌ Supabase environment variables missing in production');
+        console.error('❌ Supabase environment variables missing');
         // Fall back to local auth with alert
         console.log(`🔐 Login Token for ${trimmedEmail}: ${token}`);
         alert(`Demo Mode: Your login token is ${token}\n\nIn production, this would be sent to your email.`);
         return { 
           success: true, 
-          message: `Login token generated: ${token}. In production, this would be sent to your email.` 
+          message: `Supabase not configured. Your login token is: ${token}` 
         };
       }
       
-      // Send email via our Edge Function
+      // Send email via SendGrid Edge Function
       const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-otp-email`;
       console.log('🌐 Calling Edge Function:', edgeFunctionUrl);
       
@@ -211,25 +211,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         console.error('❌ Email sending error:', result);
         
-        // In production, fall back to local auth if email service fails
-        if (import.meta.env.PROD) {
-          console.log('🔄 Production email failed, falling back to local auth');
-          console.log(`🔐 Login Token for ${trimmedEmail}: ${token}`);
-          alert(`Email service temporarily unavailable. Your login token is: ${token}`);
-          return { 
-            success: true, 
-            message: `Email service temporarily unavailable. Your login token is: ${token}` 
-          };
-        } else {
-          // Provide more specific error messages for development
-          if (result.error && result.error.includes('domain')) {
-            return { success: false, message: 'Domain verification issue. Please contact support.' };
-          } else if (result.error && result.error.includes('API key')) {
-            return { success: false, message: 'Email service configuration issue. Please contact support.' };
-          } else {
-            return { success: false, message: `Failed to send verification code: ${result.error || 'Unknown error'}` };
-          }
-        }
+        // Always fall back to showing token if email fails
+        console.log('🔄 Email failed, falling back to local auth');
+        console.log(`🔐 Login Token for ${trimmedEmail}: ${token}`);
+        alert(`Email service temporarily unavailable. Your login token is: ${token}`);
+        return { 
+          success: true, 
+          message: `Email service temporarily unavailable. Your login token is: ${token}` 
+        };
       }
 
       // Check for TMU email and provide specific guidance
@@ -241,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { 
         success: true, 
-        message: `6-digit code sent to ${trimmedEmail}. Please check your email and enter the code.`
+        message: `6-digit code sent to ${trimmedEmail} via SendGrid. Please check your email and enter the code.`
       };
     } catch (error: any) {
       console.error('Unexpected error sending email:', error);
@@ -249,21 +238,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // In production, provide fallback
       if (import.meta.env.PROD) {
         // Generate token and show it to user as fallback
-        const token = Math.floor(100000 + Math.random() * 900000).toString();
+        const fallbackToken = Math.floor(100000 + Math.random() * 900000).toString();
         const tokenData = {
           email: trimmedEmail,
-          token,
+          token: fallbackToken,
           name: name || '',
           expiresAt: Date.now() + (10 * 60 * 1000),
           attempts: 0
         };
         localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
         
-        console.log(`🔐 Fallback Login Token for ${trimmedEmail}: ${token}`);
-        alert(`Network error occurred. Your login token is: ${token}`);
+        console.log(`🔐 Fallback Login Token for ${trimmedEmail}: ${fallbackToken}`);
+        alert(`Network error occurred. Your login token is: ${fallbackToken}`);
         return { 
           success: true, 
-          message: `Network error occurred. Your login token is: ${token}` 
+          message: `Network error occurred. Your login token is: ${fallbackToken}` 
         };
       }
       
