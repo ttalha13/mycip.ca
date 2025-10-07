@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenSent, setTokenSent] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [displayToken, setDisplayToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -51,6 +52,11 @@ export default function LoginPage() {
     try {
       const result = await sendToken(email, name);
       if (result.success) {
+        // Extract token from message if email service failed
+        const tokenMatch = result.message.match(/\d{6}/);
+        if (tokenMatch) {
+          setDisplayToken(tokenMatch[0]);
+        }
         toast.success(result.message);
         setTokenSent(true);
         setStep('token');
@@ -101,6 +107,7 @@ export default function LoginPage() {
   const resetForm = () => {
     setStep('email');
     setEmail('');
+    setDisplayToken(null);
     setName('');
     setToken('');
     setTokenSent(false);
@@ -230,6 +237,19 @@ export default function LoginPage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Check your email: <strong>{email}</strong>
                 </p>
+                {displayToken && (
+                  <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+                      Email service temporarily unavailable
+                    </p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-2">
+                      Your login token:
+                    </p>
+                    <div className="text-3xl font-mono font-bold text-yellow-900 dark:text-yellow-100 tracking-widest">
+                      {displayToken}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
