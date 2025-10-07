@@ -174,29 +174,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           verified: false
         });
 
+      // Always store in localStorage as primary fallback (use proper tokens array)
+      const tokenData = {
+        email: trimmedEmail,
+        token,
+        name: name || '',
+        expiresAt: Date.now() + (10 * 60 * 1000),
+        attempts: 0
+      };
+
+      // Store in both formats for compatibility
+      localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+
+      // Also store in tokens array for verifyTokenLocal function
+      const existingTokens = getTokens();
+      const filteredTokens = existingTokens.filter(t => t.email !== trimmedEmail);
+      filteredTokens.push(tokenData);
+      saveTokens(filteredTokens);
+
+      // Also ensure user exists in users array
+      const existingUsers = getUsers();
+      const userExists = existingUsers.some(u => u.email === trimmedEmail);
+      if (!userExists) {
+        const newUser: StoredUser = {
+          email: trimmedEmail,
+          name: name || '',
+          id: crypto.randomUUID ? crypto.randomUUID() : `user_${Date.now()}`
+        };
+        existingUsers.push(newUser);
+        saveUsers(existingUsers);
+      }
+
       if (insertError) {
         console.error('❌ Failed to store OTP in database:', insertError);
         console.error('Insert error details:', JSON.stringify(insertError, null, 2));
-        // Fallback to localStorage
-        const tokenData = {
-          email: trimmedEmail,
-          token,
-          name: name || '',
-          expiresAt: Date.now() + (10 * 60 * 1000),
-          attempts: 0
-        };
-        localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+        console.log('✅ OTP stored in localStorage as fallback');
+        console.log('🔐 Your login token:', token);
       } else {
-        console.log('✅ OTP stored successfully in database');
-        // Also store in localStorage as backup
-        const tokenData = {
-          email: trimmedEmail,
-          token,
-          name: name || '',
-          expiresAt: Date.now() + (10 * 60 * 1000),
-          attempts: 0
-        };
-        localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+        console.log('✅ OTP stored successfully in database AND localStorage');
+        console.log('🔐 Your login token:', token);
       }
 
       // Check if we're in production and Supabase URL is available
