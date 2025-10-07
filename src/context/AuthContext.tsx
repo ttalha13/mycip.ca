@@ -205,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let result;
       try {
         result = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
         console.error('📄 Raw response text:', responseText);
         
         // If it's a network error, fall back to showing token
@@ -215,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           success: true, 
           message: `Network error occurred. Your login token is: ${token}` 
         };
+      }
       }
       
       console.log('📡 Edge Function Response Body:', result);
