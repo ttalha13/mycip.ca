@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 interface EmailRequest {
   email: string
@@ -26,6 +27,10 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client with service role for rate limiting
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
     console.log('🔍 Checking Resend API key...')
     
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -79,14 +84,14 @@ serve(async (req) => {
     if (!email || !token) {
       console.error('❌ Missing required fields')
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Email and token are required',
           debug: `Email: ${!!email}, Token: ${!!token}`,
           timestamp: new Date().toISOString()
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -96,14 +101,14 @@ serve(async (req) => {
     if (!emailRegex.test(email)) {
       console.error('❌ Invalid email format:', email)
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Invalid email format',
           debug: `Email provided: ${email}`,
           timestamp: new Date().toISOString()
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -112,19 +117,57 @@ serve(async (req) => {
     if (!/^\d{6}$/.test(token)) {
       console.error('❌ Invalid token format, length:', token.length)
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Token must be 6 digits',
           debug: `Token length: ${token.length}`,
           timestamp: new Date().toISOString()
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
     console.log('✅ All validations passed')
+
+    // Check rate limiting
+    console.log('🚦 Checking rate limit for:', email)
+    const { data: rateLimitResult, error: rateLimitError } = await supabase
+      .rpc('check_otp_rate_limit', {
+        p_email: email,
+        p_ip_address: req.headers.get('x-forwarded-for') || 'unknown'
+      })
+
+    if (rateLimitError) {
+      console.error('❌ Rate limit check failed:', rateLimitError)
+    } else {
+      console.log('🚦 Rate limit result:', rateLimitResult)
+
+      if (!rateLimitResult.allowed) {
+        const retryAfter = rateLimitResult.retry_after_seconds || 1800
+        console.log('🚫 Rate limit exceeded for:', email)
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded',
+            message: 'Too many requests. Please try again later.',
+            retry_after_seconds: retryAfter,
+            blocked_until: rateLimitResult.blocked_until,
+            timestamp: new Date().toISOString()
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': retryAfter.toString()
+            }
+          }
+        )
+      }
+
+      console.log('✅ Rate limit check passed, remaining:', rateLimitResult.remaining)
+    }
 
     // Email HTML template
     const emailHtml = `
