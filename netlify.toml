@@ -18,7 +18,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--production=false"
+  NPM_FLAGS = "--production=false".     
   
 # Environment Variables for Production
 [context.production.environment]
