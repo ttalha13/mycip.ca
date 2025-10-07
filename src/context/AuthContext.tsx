@@ -217,7 +217,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           message: `Network error occurred. Your login token is: ${token}` 
         };
       }
-      }
       
       console.log('📡 Edge Function Response Body:', result);
 
