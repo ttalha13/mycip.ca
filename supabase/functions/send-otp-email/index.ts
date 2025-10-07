@@ -17,6 +17,7 @@ serve(async (req) => {
   console.log('📝 Request method:', req.method)
   console.log('🌐 Request URL:', req.url)
   console.log('📅 Timestamp:', new Date().toISOString())
+  console.log('🔑 Environment check - RESEND_API_KEY exists:', !!Deno.env.get('RESEND_API_KEY'))
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -45,13 +46,13 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ Resend API key found')
+    console.log('✅ Resend API key found, length:', RESEND_API_KEY.length)
 
     console.log('📦 Parsing request body...')
     let requestBody
     try {
       const bodyText = await req.text()
-      console.log('📝 Raw request body:', bodyText)
+      console.log('📝 Raw request body length:', bodyText.length)
       requestBody = JSON.parse(bodyText)
       console.log('✅ Request body parsed successfully')
     } catch (parseError) {
@@ -72,7 +73,7 @@ serve(async (req) => {
 
     const { email, token, name }: EmailRequest = requestBody
     console.log('📧 Email:', email)
-    console.log('🎫 Token:', token ? `${token.substring(0, 2)}****` : 'undefined')
+    console.log('🎫 Token length:', token ? token.length : 'undefined')
     console.log('👤 Name:', name || 'Not provided')
 
     if (!email || !token) {
@@ -109,11 +110,11 @@ serve(async (req) => {
 
     // Validate token format (6 digits)
     if (!/^\d{6}$/.test(token)) {
-      console.error('❌ Invalid token format:', token)
+      console.error('❌ Invalid token format, length:', token.length)
       return new Response(
         JSON.stringify({ 
           error: 'Token must be 6 digits',
-          debug: `Token provided: ${token}, Length: ${token.length}`,
+          debug: `Token length: ${token.length}`,
           timestamp: new Date().toISOString()
         }),
         { 
@@ -209,6 +210,7 @@ Having trouble? Contact us at @ttalha_13
 
     console.log('📧 Preparing to send email via Resend...')
     console.log('🎯 Target email:', email)
+    console.log('🔗 Resend API URL: https://api.resend.com/emails')
 
     // Send email via Resend API
     const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -232,12 +234,13 @@ Having trouble? Contact us at @ttalha_13
     let resendResult
     try {
       resendResult = await resendResponse.json()
+      console.log('📡 Resend Response Body:', resendResult)
     } catch (parseError) {
       console.error('❌ Failed to parse Resend response as JSON:', parseError)
+      const responseText = await resendResponse.text()
+      console.error('📄 Raw response text:', responseText)
       throw new Error('Invalid response from email service')
     }
-
-    console.log('📡 Resend Response Body:', resendResult)
 
     if (!resendResponse.ok) {
       console.error('❌ Resend API error:', resendResult)
@@ -245,14 +248,7 @@ Having trouble? Contact us at @ttalha_13
     }
 
     console.log('✅ Email sent successfully via Resend')
-
-    // Check for TMU email and provide specific guidance
-    if (email.includes('@torontomu.ca') || email.includes('@ryerson.ca')) {
-      return { 
-        success: true, 
-        message: `📧 Code sent to ${email}!\n\n⚠️ TMU Email Notice: Toronto Metropolitan University has strict email security. If you don't receive the email within 5 minutes:\n\n1. Check your SPAM/Junk folder\n2. Check TMU email quarantine\n3. Try using a personal email (Gmail, Yahoo, etc.)\n\nDelivery may be delayed due to university email policies.`
-      };
-    }
+    console.log('📧 Message ID:', resendResult.id)
 
     console.log('🎉 Function completed successfully')
     return new Response(
@@ -262,7 +258,8 @@ Having trouble? Contact us at @ttalha_13
         service: 'resend',
         debug: {
           timestamp: new Date().toISOString(),
-          messageId: resendResult.id
+          messageId: resendResult.id,
+          email: email
         }
       }),
       { 
