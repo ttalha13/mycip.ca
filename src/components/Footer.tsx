@@ -22,7 +22,7 @@ export default function Footer() {
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
                 <Copyright className="h-5 w-5" />
                 <p className="footer-text text-xs sm:text-sm lg:text-base">
-                  <span>{currentYear}</span> MyCIP.com  All rights reserved.
+                  <span>{currentYear}</span> mycip.ca  All rights reserved.
                 </p>
               </div>
               <div className="footer-text">
