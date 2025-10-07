@@ -157,6 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.from('otp_tokens').delete().eq('email', trimmedEmail);
 
       // Insert new OTP token
+      console.log('📝 Storing OTP in database:', {
+        email: trimmedEmail,
+        token: token,
+        expires_at: expiresAt
+      });
+
       const { error: insertError } = await supabase
         .from('otp_tokens')
         .insert({
@@ -169,7 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
       if (insertError) {
-        console.error('Failed to store OTP in database:', insertError);
+        console.error('❌ Failed to store OTP in database:', insertError);
+        console.error('Insert error details:', JSON.stringify(insertError, null, 2));
         // Fallback to localStorage
         const tokenData = {
           email: trimmedEmail,
@@ -179,8 +186,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           attempts: 0
         };
         localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
+      } else {
+        console.log('✅ OTP stored successfully in database');
+        // Also store in localStorage as backup
+        const tokenData = {
+          email: trimmedEmail,
+          token,
+          name: name || '',
+          expiresAt: Date.now() + (10 * 60 * 1000),
+          attempts: 0
+        };
+        localStorage.setItem(`mycip_token_${trimmedEmail}`, JSON.stringify(tokenData));
       }
-      
+
       // Check if we're in production and Supabase URL is available
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -305,6 +323,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('🔍 Verifying token for email:', trimmedEmail);
+      console.log('🔍 Token to verify:', trimmedToken);
+
       // First, try to get OTP from Supabase
       const { data: otpRecord, error: fetchError } = await supabase
         .from('otp_tokens')
@@ -314,6 +335,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      console.log('📦 OTP Record from database:', otpRecord);
+      console.log('❌ Fetch error:', fetchError);
 
       if (fetchError) {
         console.error('Error fetching OTP from database:', fetchError);
@@ -344,15 +368,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Verify token
       if (otpRecord.token === trimmedToken) {
+        console.log('✅ Token matches! Creating user session...');
+
         // Success - mark as verified and create user
-        await supabase
+        const { error: updateError } = await supabase
           .from('otp_tokens')
           .update({ verified: true })
           .eq('id', otpRecord.id);
 
-        // Create or update user profile in user_profiles table
-        const userId = crypto.randomUUID();
+        if (updateError) {
+          console.error('Error updating OTP token:', updateError);
+        }
 
+        // Generate a UUID (fallback for browsers without crypto.randomUUID)
+        const generateUUID = () => {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+
+        const userId = generateUUID();
+        console.log('🆔 Generated user ID:', userId);
+
+        // Create or update user profile in user_profiles table
         const { error: profileError } = await supabase
           .from('user_profiles')
           .upsert({
@@ -368,15 +411,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
 
         if (profileError) {
-          console.error('Error creating user profile:', profileError);
+          console.error('⚠️ Error creating user profile:', profileError);
+          console.error('Profile error details:', JSON.stringify(profileError, null, 2));
+        } else {
+          console.log('✅ User profile created/updated successfully');
         }
 
         // Get the user profile to set in state
-        const { data: profile } = await supabase
+        const { data: profile, error: selectError } = await supabase
           .from('user_profiles')
           .select('id, email, full_name')
           .eq('email', trimmedEmail)
           .maybeSingle();
+
+        if (selectError) {
+          console.error('Error fetching user profile:', selectError);
+        }
+
+        console.log('👤 User profile from DB:', profile);
 
         const userData: User = {
           email: trimmedEmail,
@@ -384,11 +436,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: profile?.full_name || otpRecord.name
         };
 
+        console.log('✅ Setting user data:', userData);
         setUser(userData);
         localStorage.setItem(LOCAL_STORAGE_FALLBACK.CURRENT_USER_KEY, JSON.stringify(userData));
 
         return { success: true, message: 'Successfully signed in!' };
       } else {
+        console.log('❌ Token does not match. Expected:', otpRecord.token, 'Got:', trimmedToken);
         // Wrong token - increment attempts
         const newAttempts = otpRecord.attempts + 1;
         await supabase
@@ -403,10 +457,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           shouldReset: attemptsLeft === 0
         };
       }
-      
+
     } catch (error: any) {
-      console.error('Unexpected error verifying token:', error);
-      return { success: false, message: 'Verification failed. Please try again.' };
+      console.error('💥 Unexpected error verifying token:', error);
+      console.error('💥 Error name:', error?.name);
+      console.error('💥 Error message:', error?.message);
+      console.error('💥 Error stack:', error?.stack);
+
+      // Try localStorage fallback if Supabase fails
+      try {
+        const storedTokenData = localStorage.getItem(`mycip_token_${trimmedEmail}`);
+        if (storedTokenData) {
+          console.log('🔄 Falling back to localStorage verification');
+          return verifyTokenLocal(email, token);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+
+      return {
+        success: false,
+        message: 'Verification failed. Please try again.'
+      };
     }
   };
 
